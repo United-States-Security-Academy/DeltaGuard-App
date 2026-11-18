@@ -1,0 +1,26 @@
+{
+  "name": "deltaguard",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:mobile": "pnpm --filter @deltaguard/mobile start",
+    "dev:admin": "pnpm --filter @deltaguard/admin dev",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:test": "supabase test db --linked",
+    "db:types": "supabase gen types typescript --linked --schema public > packages/shared/src/database.types.ts",
+    "db:push": "supabase db push --linked"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "supabase": "^2.122.0",
+    "turbo": "^2.11.10",
+    "typescript": "~6.0.3"
+  }
+}

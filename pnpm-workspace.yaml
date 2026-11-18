@@ -1,0 +1,32 @@
+packages:
+  - apps/*
+  - packages/*
+
+# React Native's tooling (Metro, autolinking, Gradle/CocoaPods) was built
+# around a flat node_modules. Expo supports pnpm's default isolated layout
+# since SDK 54, but hoisted is the most reliable choice for Expo projects.
+nodeLinker: hoisted
+
+# pnpm doesn't run dependency install scripts unless they're allowed here.
+allowBuilds:
+  supabase: true # downloads the Supabase CLI binary
+  sharp: false
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - '@expo/cli@58.1.18 || 58.1.21'
+  - '@expo/config@58.0.10'
+  - '@expo/fingerprint@0.21.8'
+  - '@expo/local-build-cache-provider@58.0.10'
+  - '@expo/log-box@58.0.14'
+  - '@expo/metro-config@58.0.20 || 58.0.23'
+  - '@expo/metro-runtime@58.0.16'
+  - '@expo/prebuild-config@58.0.18'
+  - '@expo/router-server@58.0.20 || 58.0.23'
+  - '@expo/schema-utils@58.0.3'
+  - babel-preset-expo@58.0.23 || 58.0.26
+  - expo-modules-core@58.0.29
+  - expo-router@58.0.29 || 58.0.32
+  - expo@58.0.22 || 58.0.26
+  - expo-file-system@58.0.14
+  - expo-web-browser@58.1.0

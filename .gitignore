@@ -1,0 +1,50 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# env files: never commit secrets. Only the .env.example templates are tracked.
+.env
+.env.*
+!.env.example
+
+# Claude Code files stay on this machine only
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+
+# turbo
+.turbo/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# expo / react native
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+# native folders are generated from app.json by `expo prebuild`
+apps/mobile/ios/
+apps/mobile/android/
+
+# build / misc
+build/
+coverage/
+*.tsbuildinfo
+*.pem
+.DS_Store
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*

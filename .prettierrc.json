@@ -1,0 +1,17 @@
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "plugins": ["prettier-plugin-tailwindcss"],
+  "overrides": [
+    {
+      "files": "apps/mobile/**",
+      "options": { "tailwindConfig": "./apps/mobile/tailwind.config.js" }
+    },
+    {
+      "files": "apps/admin/**",
+      "options": { "tailwindStylesheet": "./apps/admin/src/app/globals.css" }
+    }
+  ]
+}

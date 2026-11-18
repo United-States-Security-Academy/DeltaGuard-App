@@ -1,0 +1,21 @@
+{
+  "name": "@deltaguard/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@deltaguard/eslint-config": "workspace:*",
+    "eslint": "^9",
+    "typescript": "~6.0.3"
+  }
+}
