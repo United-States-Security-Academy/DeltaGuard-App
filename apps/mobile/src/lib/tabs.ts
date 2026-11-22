@@ -1,6 +1,6 @@
 import type { UserRole } from '@deltaguard/shared';
 
-export type TabName = 'index' | 'shifts' | 'reports' | 'messages' | 'profile';
+export type TabName = 'index' | 'shifts' | 'sites' | 'reports' | 'messages' | 'profile';
 
 /**
  * Which tabs each role sees. Admins run scheduling and reporting from the
@@ -10,6 +10,7 @@ export type TabName = 'index' | 'shifts' | 'reports' | 'messages' | 'profile';
 export const TAB_ACCESS: Record<TabName, readonly UserRole[]> = {
   index: ['officer', 'supervisor', 'admin'],
   shifts: ['officer', 'supervisor'],
+  sites: ['officer', 'supervisor'],
   reports: ['officer', 'supervisor'],
   messages: ['officer', 'supervisor', 'admin'],
   profile: ['officer', 'supervisor', 'admin'],

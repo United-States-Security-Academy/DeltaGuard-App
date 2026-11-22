@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { MFA_REQUIRED } from './lib/mfa';
 import { supabaseEnv } from './lib/supabase/env';
 
 // Next.js 16 renamed middleware to "proxy". This runs before every page:
@@ -12,7 +13,7 @@ import { supabaseEnv } from './lib/supabase/env';
 const PUBLIC_PATHS = ['/login', '/auth/accept', '/auth/confirm'];
 /** Reachable by any signed-in user, including officers (setting a password from an invite). */
 const ANY_USER_PATHS = ['/auth/accept', '/auth/confirm', '/auth/set-password'];
-const ADMIN_ONLY_PATHS = ['/users'];
+const ADMIN_ONLY_PATHS = ['/users', '/sites/new'];
 
 const matches = (pathname: string, paths: string[]) =>
   paths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -68,8 +69,9 @@ export async function proxy(request: NextRequest) {
     return redirectTo('/login', '?error=not_allowed');
   }
 
-  // Staff must finish MFA (aal2) before seeing anything else.
-  if (claims.aal !== 'aal2') {
+  // Staff must finish MFA (aal2) before seeing anything else
+  // (unless switched off for local development; see lib/mfa.ts).
+  if (MFA_REQUIRED && claims.aal !== 'aal2') {
     return pathname === '/mfa' ? response : redirectTo('/mfa');
   }
 

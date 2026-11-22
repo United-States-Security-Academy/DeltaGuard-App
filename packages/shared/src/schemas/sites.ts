@@ -25,6 +25,15 @@ export const siteContactSchema = z.object({
 });
 export type SiteContact = z.infer<typeof siteContactSchema>;
 
+/** site_contacts (jsonb) as read back from the database. */
+export const siteContactsSchema = z.array(siteContactSchema).max(50);
+
+/** Well-formed contacts only; anything malformed reads as an empty list. */
+export function parseSiteContacts(value: unknown): SiteContact[] {
+  const parsed = siteContactsSchema.safeParse(value);
+  return parsed.success ? parsed.data : [];
+}
+
 /** Fields admins and supervisors may edit on a site. */
 export const siteDetailsSchema = z
   .object({
@@ -34,7 +43,7 @@ export const siteDetailsSchema = z
     longitude: z.number().min(-180).max(180).nullable(),
     clock_in_radius_m: z.number().int().min(25).max(5000).default(DEFAULT_CLOCK_IN_RADIUS_M),
     emergency_instructions: optionalText(10000),
-    site_contacts: z.array(siteContactSchema).max(50).default([]),
+    site_contacts: siteContactsSchema.default([]),
     active: z.boolean().default(true),
   })
   .refine((s) => (s.latitude === null) === (s.longitude === null), {
