@@ -71,7 +71,7 @@ export default function SetPasswordScreen() {
 
   if (phase === 'failed') {
     return (
-      <SafeAreaView className="flex-1 justify-center gap-4 bg-white px-6 dark:bg-slate-950">
+      <SafeAreaView className="flex-1 justify-center gap-4 bg-ink px-6">
         <Title>Link not valid</Title>
         <Notice tone="error">{linkError}</Notice>
         <Button
@@ -84,7 +84,7 @@ export default function SetPasswordScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <SafeAreaView className="flex-1 bg-ink">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

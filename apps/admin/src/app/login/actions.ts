@@ -4,6 +4,7 @@ import { signInSchema } from '@deltaguard/shared';
 import { redirect } from 'next/navigation';
 
 import { type ActionState, invalid } from '@/lib/action-state';
+import { MFA_REQUIRED } from '@/lib/mfa';
 import { createClient } from '@/lib/supabase/server';
 
 export async function signIn(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -33,5 +34,5 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
     };
   }
 
-  redirect('/mfa');
+  redirect(MFA_REQUIRED ? '/mfa' : '/');
 }

@@ -1,8 +1,10 @@
 import { APP_NAME } from '@deltaguard/shared';
+import { Image } from 'expo-image';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import logo from '@/assets/images/logo.png';
 import { useSession } from '@/lib/session';
 
 import { Body, Button, Notice, Title } from './ui';
@@ -29,8 +31,14 @@ export function LockScreen() {
   }, [unlock, finish]);
 
   return (
-    <View className="absolute inset-0 bg-white dark:bg-slate-950">
+    <View className="absolute inset-0 bg-ink">
       <SafeAreaView className="flex-1 justify-center gap-6 px-6">
+        <Image
+          source={logo}
+          style={{ width: 96, height: 120, alignSelf: 'center' }}
+          contentFit="contain"
+          accessibilityLabel="Deltacon Security Group badge"
+        />
         <View className="gap-2">
           <Title>{APP_NAME} is locked</Title>
           <Body>Use Face ID, your fingerprint or your phone passcode to continue.</Body>

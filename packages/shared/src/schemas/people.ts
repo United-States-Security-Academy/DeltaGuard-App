@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { LICENSE_FILE_MAX_BYTES, LICENSE_FILE_MIME_TYPES } from '../constants';
-import { isoDateSchema, optionalText } from './common';
+import { EMPLOYMENT_STATUSES, LICENSE_FILE_MAX_BYTES, LICENSE_FILE_MIME_TYPES } from '../constants';
+import { firstParam, isoDateSchema, optionalText } from './common';
 import { fullNameSchema, phoneSchema } from './user';
 
 // Mirrors the CHECK constraints on public.officer_details / public.qualifications.
@@ -48,3 +48,19 @@ export const licenseFileSchema = z.object({
   size: z.number().int().positive().max(LICENSE_FILE_MAX_BYTES, 'File must be 10 MB or smaller'),
   type: z.enum(LICENSE_FILE_MIME_TYPES, 'Upload a JPEG, PNG, HEIC, WebP or PDF'),
 });
+
+// Admin console: officers list filters, read from the URL. `.catch` makes a
+// hand-edited or stale URL fall back to the default instead of erroring.
+export const LICENCE_FILTERS = ['expired', '30', '60'] as const;
+export type LicenceFilter = (typeof LICENCE_FILTERS)[number];
+
+export const officerListFiltersSchema = z.object({
+  q: z.preprocess(firstParam, z.string().trim().max(100)).catch(''),
+  status: z.preprocess(firstParam, z.enum([...EMPLOYMENT_STATUSES, 'all'])).catch('active'),
+  licence: z.preprocess(firstParam, z.enum(LICENCE_FILTERS).optional()).catch(undefined),
+});
+export type OfficerListFilters = z.infer<typeof officerListFiltersSchema>;
+
+export const OFFICER_TABS = ['details', 'qualifications', 'sites'] as const;
+export const officerTabSchema = z.preprocess(firstParam, z.enum(OFFICER_TABS)).catch('details');
+export type OfficerTab = z.infer<typeof officerTabSchema>;

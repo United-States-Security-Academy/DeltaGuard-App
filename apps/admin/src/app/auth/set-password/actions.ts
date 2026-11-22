@@ -4,6 +4,7 @@ import { setPasswordSchema } from '@deltaguard/shared';
 import { redirect } from 'next/navigation';
 
 import { type ActionState, invalid } from '@/lib/action-state';
+import { MFA_REQUIRED } from '@/lib/mfa';
 import { createClient } from '@/lib/supabase/server';
 
 export async function setPassword(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -21,7 +22,7 @@ export async function setPassword(_prev: ActionState, formData: FormData): Promi
   if (error) return { ok: false, message: error.message };
 
   const role = data.claims.user_role;
-  if (role === 'admin' || role === 'supervisor') redirect('/mfa');
+  if (role === 'admin' || role === 'supervisor') redirect(MFA_REQUIRED ? '/mfa' : '/');
 
   // Officers never use the console: sign them out here.
   await supabase.auth.signOut({ scope: 'local' });

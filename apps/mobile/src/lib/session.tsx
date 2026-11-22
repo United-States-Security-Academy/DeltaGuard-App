@@ -12,7 +12,9 @@ import {
 import { AppState } from 'react-native';
 
 import { type AccessResult, type Profile, verifyAccess } from './access';
+import { queryClient } from './query-client';
 import { authenticateOwner, type UnlockResult } from './biometric';
+import { registerForPush, unregisterPush, watchPushToken } from './push';
 import { supabase } from './supabase';
 
 /** Lock again after this long in the background. */
@@ -55,10 +57,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     stateRef.current = state;
   }, [state]);
   const backgroundedAt = useRef<number | null>(null);
+  // True when the user just typed their password (sign-in or invite): the
+  // moment to ask for notification permission.
+  const askForPush = useRef(false);
 
   const signOut = useCallback(async (notice?: string) => {
+    // Stop pushes to this phone while the session can still update its row
+    // (if the device was reset, the database has already cleared the token).
+    const current = stateRef.current;
+    if (current.status === 'ready') await unregisterPush(current.profile.id);
     // 'local' ends this phone's session only (not the officer's other sessions).
     await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    // Forget everything fetched for this user (details, licences, sites).
+    queryClient.clear();
     setLocked(false);
     setState({ status: 'signedOut', notice });
   }, []);
@@ -79,6 +90,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const enter = useCallback(
     async (userId: string, allowRegister: boolean) => {
+      askForPush.current = allowRegister;
       await applyAccess(await verifyAccess(userId, allowRegister), userId, allowRegister);
     },
     [applyAccess],
@@ -114,6 +126,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       listener.subscription.unsubscribe();
     };
   }, [enter]);
+
+  // Push notifications: register once the user is in, and keep the token
+  // current while they stay signed in.
+  const readyUserId = state.status === 'ready' ? state.profile.id : null;
+  useEffect(() => {
+    if (!readyUserId) return;
+    void registerForPush(readyUserId, { ask: askForPush.current });
+    askForPush.current = false;
+    return watchPushToken(readyUserId);
+  }, [readyUserId]);
 
   // Lock after 5 minutes in the background. Only 'background' counts:
   // iOS reports 'inactive' while the Face ID prompt itself is showing.

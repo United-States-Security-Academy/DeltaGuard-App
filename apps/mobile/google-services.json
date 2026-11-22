@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "556125865182",
+    "project_id": "deltaguard-d7fae",
+    "storage_bucket": "deltaguard-d7fae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556125865182:android:8839acf90e9b96b5546e4f",
+        "android_client_info": {
+          "package_name": "com.deltaconsecurity.deltaguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJot-RkOs8bLJr_BcaMThcMx5BeiLARMk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
