@@ -134,7 +134,7 @@ export function ClockPanel({
     if (permission === 'ask') return setStep({ kind: 'explain', type });
     setStep({
       kind: 'problem',
-      message: `Location access is turned off for DeltaGuard, so you can’t ${NOUN[type]}. In Settings, allow location “While using the app”${
+      message: `Location access is turned off for Deltacon Guard, so you can’t ${NOUN[type]}. In Settings, allow location “While using the app”${
         Platform.OS === 'ios' ? ' and turn on Precise Location' : ''
       }, then come back and try again.`,
       settings: true,
@@ -146,7 +146,7 @@ export function ClockPanel({
     if ((await requestLocationPermission()) === 'granted') return locate(type);
     setStep({
       kind: 'problem',
-      message: `Without location access you can’t ${NOUN[type]}: it’s how DeltaGuard confirms you’re at ${siteName}. If you change your mind, allow it in Settings.`,
+      message: `Without location access you can’t ${NOUN[type]}: it’s how Deltacon Guard confirms you’re at ${siteName}. If you change your mind, allow it in Settings.`,
       settings: true,
     });
   }
@@ -159,7 +159,7 @@ export function ClockPanel({
         services_off:
           'Location services are turned off on this phone. Turn them on (in Settings or the quick settings panel) and try again.',
         permission:
-          'Location access is turned off for DeltaGuard. Allow it in Settings and try again.',
+          'Location access is turned off for Deltacon Guard. Allow it in Settings and try again.',
         timeout:
           'Couldn’t get a GPS fix. Move outdoors or near a window, wait a few seconds, and try again.',
         unavailable:
@@ -184,7 +184,7 @@ export function ClockPanel({
     const message = toMessage(outcome, type);
     if (result.fix.reducedAccuracy && outcome.kind !== 'error') {
       message.lines.push(
-        'Precise Location is off for DeltaGuard, so your position was approximate. Turn it on in Settings › DeltaGuard › Location.',
+        'Precise Location is off for Deltacon Guard, so your position was approximate. Turn it on in Settings › Deltacon Guard › Location.',
       );
     }
     if (handoverNote && outcome.kind !== 'error') {
@@ -394,7 +394,7 @@ function ExplainLocation({
           </Text>
           <View className="gap-2">
             <Text className="text-base leading-6 text-white/80">
-              To confirm you&apos;re at {siteName}, DeltaGuard checks your phone&apos;s location
+              To confirm you&apos;re at {siteName}, Deltacon Guard checks your phone&apos;s location
               once, at the moment you {NOUN[type]}.
             </Text>
             <Text className="text-base leading-6 text-white/80">

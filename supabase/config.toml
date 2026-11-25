@@ -422,3 +422,6 @@ enabled = true
 # notifications needs the service role or a signed-in admin/supervisor.
 [functions.send-notification]
 verify_jwt = false
+
+[functions.sos-dispatch]
+verify_jwt = false

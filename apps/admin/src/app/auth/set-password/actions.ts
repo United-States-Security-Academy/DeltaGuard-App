@@ -28,6 +28,6 @@ export async function setPassword(_prev: ActionState, formData: FormData): Promi
   await supabase.auth.signOut({ scope: 'local' });
   return {
     ok: true,
-    message: 'Password set. You can now sign in on the DeltaGuard mobile app.',
+    message: 'Password set. You can now sign in on the Deltacon Guard mobile app.',
   };
 }

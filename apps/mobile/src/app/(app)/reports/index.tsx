@@ -97,6 +97,7 @@ function Reports({ userId }: { userId: string }) {
           <ErrorState
             message="Couldn't load your reports. Reports on this phone are still safe."
             onRetry={() => void server.refetch()}
+            error={server.error}
           />
         ) : sent.length === 0 && server.isSuccess ? (
           <Body>No incident reports yet.</Body>

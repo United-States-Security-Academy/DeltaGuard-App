@@ -46,7 +46,7 @@ export function MfaForm() {
 
       const enrolled = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: 'DeltaGuard Admin',
+        friendlyName: 'Deltacon Guard Admin',
       });
       if (enrolled.error) return setStep({ kind: 'error', message: enrolled.error.message });
       setStep({

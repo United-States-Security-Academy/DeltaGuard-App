@@ -46,7 +46,11 @@ function ShiftDetail({ id, userId }: { id: string; userId: string }) {
   if (shifts.isError) {
     return (
       <View className="flex-1 bg-ink p-5">
-        <ErrorState message="Couldn't load this shift." onRetry={() => void shifts.refetch()} />
+        <ErrorState
+          message="Couldn't load this shift."
+          onRetry={() => void shifts.refetch()}
+          error={shifts.error}
+        />
       </View>
     );
   }

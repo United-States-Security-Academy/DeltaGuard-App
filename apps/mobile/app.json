@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "DeltaGuard",
+    "name": "Deltacon Guard",
     "slug": "deltaguard",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,11 @@
     "scheme": "deltaguard",
     "userInterfaceStyle": "dark",
     "ios": {
-      "bundleIdentifier": "com.deltaconsecurity.deltaguard"
+      "bundleIdentifier": "com.deltaconsecurity.deltaguard",
+      "supportsTablet": false,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -49,10 +53,10 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "DeltaGuard uses your location only at the moment you clock in or out of a shift, or send an SOS, to confirm you are at your post. It never tracks you in the background.",
-          "locationAlwaysAndWhenInUsePermission": "DeltaGuard uses your location only at the moment you clock in or out of a shift, or send an SOS, to confirm you are at your post. It never tracks you in the background.",
-          "locationAlwaysPermission": "DeltaGuard uses your location only at the moment you clock in or out of a shift, or send an SOS, to confirm you are at your post. It never tracks you in the background.",
-          "locationFullAccuracyPermission": "DeltaGuard needs your precise location to confirm you are at your post when you clock in or out.",
+          "locationWhenInUsePermission": "Deltacon Guard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
+          "locationAlwaysAndWhenInUsePermission": "Deltacon Guard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
+          "locationAlwaysPermission": "Deltacon Guard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
+          "locationFullAccuracyPermission": "Deltacon Guard needs your exact location to confirm you are inside the site area when you clock in or out.",
           "motionUsagePermission": false,
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false,
@@ -63,14 +67,14 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID to unlock the app."
+          "faceIDPermission": "Deltacon Guard uses Face ID to unlock the app, so nobody else can open it on your phone."
         }
       ],
       [
         "expo-image-picker",
         {
-          "cameraPermission": "DeltaGuard uses the camera when you choose to add a photo to an incident report or your daily activity report.",
-          "photosPermission": "DeltaGuard opens your photos when you choose to attach them to an incident report or your daily activity report.",
+          "cameraPermission": "Deltacon Guard uses the camera only when you take a photo for an incident report, your daily activity report or a message.",
+          "photosPermission": "Deltacon Guard opens your photos only when you choose one to add to an incident report, your daily activity report or a message.",
           "microphonePermission": false
         }
       ],
@@ -100,6 +104,15 @@
       "eas": {
         "projectId": "50468283-33ec-426c-be79-08b0a5869f1b"
       }
+    },
+    "description": "Shifts, clock-in, reports and SOS for Deltacon Security officers.",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/50468283-33ec-426c-be79-08b0a5869f1b",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

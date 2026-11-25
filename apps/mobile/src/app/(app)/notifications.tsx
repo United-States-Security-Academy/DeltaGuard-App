@@ -68,6 +68,7 @@ function Inbox({ userId }: { userId: string }) {
         <ErrorState
           message="Couldn't load your notifications."
           onRetry={() => void inbox.refetch()}
+          error={inbox.error}
         />
       ) : null}
       {unread > 0 ? (

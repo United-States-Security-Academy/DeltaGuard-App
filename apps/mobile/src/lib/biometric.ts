@@ -13,12 +13,12 @@ export async function authenticateOwner(): Promise<UnlockResult> {
     return {
       ok: false,
       message:
-        'This phone has no screen lock. Set up a PIN, pattern, fingerprint or face unlock in your phone settings to use DeltaGuard.',
+        'This phone has no screen lock. Set up a PIN, pattern, fingerprint or face unlock in your phone settings to use Deltacon Guard.',
     };
   }
 
   const result = await LocalAuthentication.authenticateAsync({
-    promptMessage: 'Unlock DeltaGuard',
+    promptMessage: 'Unlock Deltacon Guard',
     cancelLabel: 'Cancel',
     // false = allow the phone's passcode/PIN when biometrics fail or aren't set up.
     disableDeviceFallback: false,

@@ -57,6 +57,15 @@ export async function proxy(request: NextRequest) {
     return matches(pathname, PUBLIC_PATHS) ? response : redirectTo('/login');
   }
 
+  // A page's live check (lib/auth.ts) found that this session no longer
+  // matches the profile: suspended, terminated or role changed since the token
+  // was issued. Pages can't write cookies, so the sign-out happens here; the
+  // login page then shows "not allowed" instead of bouncing back to "/".
+  if (pathname === '/login' && request.nextUrl.searchParams.get('error') === 'not_allowed') {
+    await supabase.auth.signOut({ scope: 'local' });
+    return response;
+  }
+
   if (matches(pathname, ANY_USER_PATHS)) {
     return response;
   }

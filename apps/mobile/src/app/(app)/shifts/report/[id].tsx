@@ -1,9 +1,10 @@
 import {
   DAR_ENTRY_LABELS,
   DAR_ENTRY_TYPES,
-  type DarEntryType,
   formatTimeRange,
+  friendlyError,
   toZoned,
+  type DarEntryType,
 } from '@deltaguard/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
@@ -98,7 +99,11 @@ function ShiftReportView({ shiftId, userId }: { shiftId: string; userId: string 
   if (report.isError) {
     return (
       <View className="flex-1 bg-ink p-5">
-        <ErrorState message="Couldn't load the report." onRetry={() => void report.refetch()} />
+        <ErrorState
+          message="Couldn't load the report."
+          onRetry={() => void report.refetch()}
+          error={report.error}
+        />
       </View>
     );
   }
@@ -275,7 +280,9 @@ function Composer({
     if (source === 'camera') {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        setPhotoError('Camera access is off for DeltaGuard. Allow it in Settings to take photos.');
+        setPhotoError(
+          'Camera access is off for Deltacon Guard. Allow it in Settings to take photos.',
+        );
         return;
       }
       result = await ImagePicker.launchCameraAsync(options);
@@ -384,9 +391,7 @@ function Composer({
             )}
             {photoError ? <Notice tone="error">{photoError}</Notice> : null}
             {add.isError ? (
-              <Notice tone="error">
-                Couldn&apos;t save: {add.error.message}. Check your connection and try again.
-              </Notice>
+              <Notice tone="error">{friendlyError(add.error, { action: 'save' })}</Notice>
             ) : null}
 
             <Button

@@ -1,3 +1,4 @@
+import { errorKind, friendlyError } from '@deltaguard/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type ReactNode, useState } from 'react';
 import {
@@ -175,14 +176,31 @@ export function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-/** A failed load with a retry button. */
-export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+/**
+ * A failed load with a retry button. Pass the error to add what to do about it
+ * (offline, sign-in expired); the raw technical text is never shown.
+ */
+export function ErrorState({
+  message,
+  error,
+  onRetry,
+}: {
+  message: string;
+  error?: unknown;
+  onRetry: () => void;
+}) {
+  const hint = error === undefined ? '' : errorHint(error);
   return (
     <View className="gap-3">
-      <Notice tone="error">{message}</Notice>
+      <Notice tone="error">{hint ? `${message} ${hint}` : message}</Notice>
       <Button title="Try again" variant="secondary" onPress={onRetry} />
     </View>
   );
+}
+
+/** The "what to do" part of friendlyError, or nothing for unexplained errors. */
+function errorHint(error: unknown): string {
+  return errorKind(error) === 'unknown' ? '' : friendlyError(error);
 }
 
 /** Small status pill. Gold for attention, muted for neutral, red for problems. */

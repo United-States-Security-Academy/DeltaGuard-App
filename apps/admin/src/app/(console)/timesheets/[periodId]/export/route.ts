@@ -90,7 +90,7 @@ async function xlsx(
   endsOn: string,
 ): Promise<ArrayBuffer> {
   const book = new ExcelJS.Workbook();
-  book.creator = 'DeltaGuard';
+  book.creator = 'Deltacon Guard';
   book.created = new Date();
 
   const sheet = book.addWorksheet('Timesheet', { views: [{ state: 'frozen', ySplit: 1 }] });

@@ -33,7 +33,7 @@ export async function takePhoto(): Promise<PickResult> {
   if (!permission.granted) {
     return {
       kind: 'denied',
-      message: 'Camera access is off for DeltaGuard. Allow it in Settings to take photos.',
+      message: 'Camera access is off for Deltacon Guard. Allow it in Settings to take photos.',
     };
   }
   const result = await ImagePicker.launchCameraAsync(PICKER_OPTIONS);

@@ -1,9 +1,11 @@
+import { MESSAGE_NOTIFICATION_TYPE } from '@deltaguard/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { type Href, router } from 'expo-router';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
+import { useChatListLive, useUnreadMessageTotal } from './messaging';
 import { supabase } from './supabase';
 
 // The in-app inbox: every alert the server sends also lands in the
@@ -31,6 +33,8 @@ export function useInbox(userId: string) {
         .from('notifications')
         .select('id, type, title, body, data, read_at, created_at')
         .eq('user_id', userId)
+        // Chat messages have their own unread counts in Messages.
+        .neq('type', MESSAGE_NOTIFICATION_TYPE)
         .order('created_at', { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -61,6 +65,7 @@ export function useMarkRead(userId: string) {
         .from('notifications')
         .update({ read_at: new Date().toISOString() })
         .eq('user_id', userId)
+        .neq('type', MESSAGE_NOTIFICATION_TYPE)
         .is('read_at', null);
       if (ids) query = query.in('id', ids);
       const { error } = await query;
@@ -74,6 +79,18 @@ export function useMarkRead(userId: string) {
 export function routeFor(type: string, data: Record<string, unknown>): Href {
   const shiftId = typeof data.shift_id === 'string' ? data.shift_id : null;
   switch (type) {
+    case MESSAGE_NOTIFICATION_TYPE:
+      return typeof data.conversation_id === 'string'
+        ? { pathname: '/messages/[id]', params: { id: data.conversation_id } }
+        : '/messages';
+    case 'sos':
+      // Supervisors and admins: the alert itself.
+      return typeof data.alert_id === 'string'
+        ? { pathname: '/sos-alert/[id]', params: { id: data.alert_id } }
+        : '/notifications';
+    case 'sos_update':
+      // The officer: their SOS screen opens on its own (SosProvider).
+      return '/';
     case 'shift_assigned':
     case 'shift_changed':
     case 'shift_cancelled':
@@ -95,7 +112,8 @@ export function routeFor(type: string, data: Record<string, unknown>): Href {
  */
 export function useNotificationsBridge(userId: string) {
   const client = useQueryClient();
-  const unread = useUnreadCount(userId);
+  const unread = useUnreadCount(userId) + useUnreadMessageTotal(userId);
+  useChatListLive(userId);
 
   useEffect(() => {
     void Notifications.setBadgeCountAsync(unread).catch(() => undefined);

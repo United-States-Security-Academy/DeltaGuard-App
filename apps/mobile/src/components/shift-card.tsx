@@ -2,6 +2,7 @@ import {
   addDaysIso,
   formatDayShort,
   formatTimeRange,
+  friendlyError,
   todayInZone,
   toZoned,
 } from '@deltaguard/shared';
@@ -54,10 +55,7 @@ export function AcknowledgeButton({ shift, userId }: { shift: MyShift; userId: s
         onPress={() => acknowledge.mutate(shift.id)}
       />
       {acknowledge.isError ? (
-        <Notice tone="error">
-          Couldn&apos;t acknowledge: {acknowledge.error.message}. Check your connection and try
-          again.
-        </Notice>
+        <Notice tone="error">{friendlyError(acknowledge.error, { action: 'acknowledge' })}</Notice>
       ) : null}
     </View>
   );

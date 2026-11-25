@@ -113,6 +113,130 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_members: {
+        Row: {
+          added_by: string | null
+          conversation_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          conversation_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          conversation_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_reads: {
+        Row: {
+          conversation_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          last_read_at: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_reads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          direct_key: string | null
+          id: string
+          last_message_at: string | null
+          name: string | null
+          site_id: string | null
+          type: Database["public"]["Enums"]["conversation_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          direct_key?: string | null
+          id?: string
+          last_message_at?: string | null
+          name?: string | null
+          site_id?: string | null
+          type: Database["public"]["Enums"]["conversation_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          direct_key?: string | null
+          id?: string
+          last_message_at?: string | null
+          name?: string | null
+          site_id?: string | null
+          type?: Database["public"]["Enums"]["conversation_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_activity_reports: {
         Row: {
           created_at: string
@@ -356,6 +480,48 @@ export type Database = {
             columns: ["site_id"]
             isOneToOne: false
             referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          attachment_path: string | null
+          body: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          attachment_path?: string | null
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          attachment_path?: string | null
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -949,6 +1115,306 @@ export type Database = {
           },
         ]
       }
+      sos_alerts: {
+        Row: {
+          accuracy_m: number | null
+          acknowledge_notes: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          acknowledged_by_name: string | null
+          created_at: string
+          escalation_level: number
+          id: string
+          latitude: number | null
+          location_at: string | null
+          longitude: number | null
+          next_escalation_at: string | null
+          officer_id: string
+          officer_name: string
+          officer_phone: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          shift_id: string | null
+          site_id: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["sos_status"]
+          triggered_at: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          acknowledge_notes?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          acknowledged_by_name?: string | null
+          created_at?: string
+          escalation_level?: number
+          id: string
+          latitude?: number | null
+          location_at?: string | null
+          longitude?: number | null
+          next_escalation_at?: string | null
+          officer_id: string
+          officer_name: string
+          officer_phone?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          shift_id?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          status?: Database["public"]["Enums"]["sos_status"]
+          triggered_at: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          acknowledge_notes?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          acknowledged_by_name?: string | null
+          created_at?: string
+          escalation_level?: number
+          id?: string
+          latitude?: number | null
+          location_at?: string | null
+          longitude?: number | null
+          next_escalation_at?: string | null
+          officer_id?: string
+          officer_name?: string
+          officer_phone?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_name?: string | null
+          shift_id?: string | null
+          site_id?: string | null
+          site_name?: string | null
+          status?: Database["public"]["Enums"]["sos_status"]
+          triggered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_alerts_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sos_alerts_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sos_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sos_alerts_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sos_alerts_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sos_contacts: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          position: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+          position: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          position?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sos_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          alert_id: string
+          created_at: string
+          data: Json
+          id: number
+          notes: string | null
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          alert_id: string
+          created_at?: string
+          data?: Json
+          id?: never
+          notes?: string | null
+          type: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          alert_id?: string
+          created_at?: string
+          data?: Json
+          id?: never
+          notes?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sos_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "sos_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sos_locations: {
+        Row: {
+          accuracy_m: number | null
+          alert_id: string
+          id: number
+          latitude: number
+          longitude: number
+          received_at: string
+          recorded_at: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          alert_id: string
+          id?: never
+          latitude: number
+          longitude: number
+          received_at?: string
+          recorded_at: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          alert_id?: string
+          id?: never
+          latitude?: number
+          longitude?: number
+          received_at?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_locations_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "sos_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sos_sms_outbox: {
+        Row: {
+          alert_id: string
+          attempts: number
+          body: string
+          claimed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          next_attempt_at: string
+          phone: string
+          provider_id: string | null
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          alert_id: string
+          attempts?: number
+          body: string
+          claimed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          next_attempt_at?: string
+          phone: string
+          provider_id?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          alert_id?: string
+          attempts?: number
+          body?: string
+          claimed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          next_attempt_at?: string
+          phone?: string
+          provider_id?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sos_sms_outbox_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "sos_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timesheet_corrections: {
         Row: {
           corrected_at: string
@@ -1182,8 +1648,55 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      acknowledge_sos: {
+        Args: { p_alert_id: string; p_notes?: string }
+        Returns: {
+          accuracy_m: number | null
+          acknowledge_notes: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          acknowledged_by_name: string | null
+          created_at: string
+          escalation_level: number
+          id: string
+          latitude: number | null
+          location_at: string | null
+          longitude: number | null
+          next_escalation_at: string | null
+          officer_id: string
+          officer_name: string
+          officer_phone: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          shift_id: string | null
+          site_id: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["sos_status"]
+          triggered_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sos_alerts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       active_admin_ids: { Args: never; Returns: string[] }
       active_supervisor_ids: { Args: { p_except?: string }; Returns: string[] }
+      add_conversation_members: {
+        Args: { p_conversation_id: string; p_user_ids: string[] }
+        Returns: number
+      }
+      add_members_internal: {
+        Args: {
+          p_added_by: string
+          p_conversation_id: string
+          p_user_ids: string[]
+        }
+        Returns: string[]
+      }
       approve_timesheet_entries: {
         Args: { p_entry_ids: string[] }
         Returns: number
@@ -1191,6 +1704,15 @@ export type Database = {
       auth_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      can_see_sos: { Args: { p_alert_id: string }; Returns: boolean }
+      chat_contacts: {
+        Args: never
+        Returns: {
+          full_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
       }
       claim_notifications: {
         Args: { p_ids?: string[] }
@@ -1213,6 +1735,30 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_sos_sms: {
+        Args: { p_limit?: number }
+        Returns: {
+          alert_id: string
+          attempts: number
+          body: string
+          claimed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          next_attempt_at: string
+          phone: string
+          provider_id: string | null
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "sos_sms_outbox"
           isOneToOne: false
           isSetofReturn: true
         }
@@ -1253,6 +1799,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      conversation_people: {
+        Args: { p_conversation_id: string }
+        Returns: {
+          full_name: string
+          is_member: boolean
+          last_read_at: string
+          role: Database["public"]["Enums"]["user_role"]
+          user_id: string
+        }[]
+      }
       correct_timesheet_entry: {
         Args: {
           p_clock_in_at: string
@@ -1287,18 +1843,94 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_group_conversation: {
+        Args: { p_member_ids?: string[]; p_name: string; p_site_id?: string }
+        Returns: string
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      dashboard_attendance: {
+        Args: { p_days?: number; p_now?: string }
+        Returns: {
+          day: string
+          late: number
+          missed: number
+          on_time: number
+        }[]
+      }
+      dashboard_incidents_by_site: {
+        Args: { p_days?: number; p_now?: string }
+        Returns: {
+          high_or_critical: number
+          incidents: number
+          site_id: string
+          site_name: string
+        }[]
+      }
+      dashboard_summary: {
+        Args: { p_now?: string }
+        Returns: {
+          flagged: number
+          incidents_awaiting_review: number
+          late: number
+          late_arrivals: number
+          licences_expired: number
+          licences_expiring_60: number
+          missed: number
+          not_clocked_in: number
+          on_duty: number
+          shifts_covered: number
+          shifts_scheduled: number
+          timesheets_pending: number
+          timesheets_pending_period_id: string
+        }[]
+      }
       distance_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
+      }
+      e164_or_null: { Args: { p_phone: string }; Returns: string }
+      finish_sos_sms: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_provider_id?: string
+          p_status: string
+        }
+        Returns: undefined
       }
       format_shift_time: {
         Args: { p_ends_at: string; p_starts_at: string }
         Returns: string
       }
       is_active_user: { Args: never; Returns: boolean }
+      is_conversation_folder_member: {
+        Args: { p_folder: string }
+        Returns: boolean
+      }
+      is_conversation_member: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
       is_locked_date: { Args: { p_date: string }; Returns: boolean }
+      is_staff: { Args: never; Returns: boolean }
       is_valid_time_zone: { Args: { p_name: string }; Returns: boolean }
+      list_conversations: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          last_message_at: string
+          last_message_preview: string
+          last_message_sender_id: string
+          member_count: number
+          other_user_id: string
+          other_user_role: Database["public"]["Enums"]["user_role"]
+          site_id: string
+          title: string
+          type: Database["public"]["Enums"]["conversation_type"]
+          unread_count: number
+        }[]
+      }
       lock_pay_period: {
         Args: { p_period_id: string }
         Returns: {
@@ -1318,6 +1950,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
       mark_missed_shifts: { Args: never; Returns: number }
       notify_expiring_licences: { Args: never; Returns: number }
       notify_upcoming_shifts: { Args: never; Returns: number }
@@ -1336,9 +1972,98 @@ export type Database = {
         Args: { p_at?: string; p_officer_id: string; p_site_id: string }
         Returns: number
       }
+      queue_sos_sms: {
+        Args: { p_alert_id: string; p_body: string; p_targets: Json }
+        Returns: number
+      }
+      raise_sos: {
+        Args: {
+          p_accuracy_m?: number
+          p_id: string
+          p_latitude?: number
+          p_longitude?: number
+          p_triggered_at?: string
+        }
+        Returns: {
+          accuracy_m: number | null
+          acknowledge_notes: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          acknowledged_by_name: string | null
+          created_at: string
+          escalation_level: number
+          id: string
+          latitude: number | null
+          location_at: string | null
+          longitude: number | null
+          next_escalation_at: string | null
+          officer_id: string
+          officer_name: string
+          officer_phone: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          shift_id: string | null
+          site_id: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["sos_status"]
+          triggered_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sos_alerts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      remove_conversation_member: {
+        Args: { p_conversation_id: string; p_user_id: string }
+        Returns: undefined
+      }
       request_push_delivery: {
         Args: { p_notification_ids?: string[] }
         Returns: undefined
+      }
+      request_sos_sms: { Args: never; Returns: undefined }
+      resolve_sos: {
+        Args: {
+          p_alert_id: string
+          p_notes: string
+          p_status: Database["public"]["Enums"]["sos_status"]
+        }
+        Returns: {
+          accuracy_m: number | null
+          acknowledge_notes: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          acknowledged_by_name: string | null
+          created_at: string
+          escalation_level: number
+          id: string
+          latitude: number | null
+          location_at: string | null
+          longitude: number | null
+          next_escalation_at: string | null
+          officer_id: string
+          officer_name: string
+          officer_phone: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          shift_id: string | null
+          site_id: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["sos_status"]
+          triggered_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sos_alerts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       review_incident: {
         Args: {
@@ -1383,6 +2108,82 @@ export type Database = {
         }[]
       }
       shift_work_date: { Args: { p_starts_at: string }; Returns: string }
+      sos_contacts_for_me: {
+        Args: never
+        Returns: {
+          kind: string
+          name: string
+          phone: string
+          sort: number
+        }[]
+      }
+      sos_location_update: {
+        Args: {
+          p_accuracy_m?: number
+          p_alert_id: string
+          p_latitude: number
+          p_longitude: number
+          p_recorded_at?: string
+        }
+        Returns: boolean
+      }
+      sos_log_officer_action: {
+        Args: {
+          p_alert_id: string
+          p_at?: string
+          p_data?: Json
+          p_type: string
+        }
+        Returns: undefined
+      }
+      sos_mark_safe: {
+        Args: { p_alert_id: string; p_false_alarm: boolean; p_notes?: string }
+        Returns: {
+          accuracy_m: number | null
+          acknowledge_notes: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          acknowledged_by_name: string | null
+          created_at: string
+          escalation_level: number
+          id: string
+          latitude: number | null
+          location_at: string | null
+          longitude: number | null
+          next_escalation_at: string | null
+          officer_id: string
+          officer_name: string
+          officer_phone: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_name: string | null
+          shift_id: string | null
+          site_id: string | null
+          site_name: string | null
+          status: Database["public"]["Enums"]["sos_status"]
+          triggered_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sos_alerts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      sos_run_dispatch: { Args: { p_alert_id?: string }; Returns: number }
+      sos_sms_text: {
+        Args: {
+          p_alert: Database["public"]["Tables"]["sos_alerts"]["Row"]
+          p_prefix: string
+        }
+        Returns: string
+      }
+      sos_staff_targets: { Args: { p_except: string }; Returns: string[] }
+      start_direct_conversation: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       submit_incident: {
         Args: {
           p_category: string
@@ -1425,6 +2226,7 @@ export type Database = {
     }
     Enums: {
       attendance_type: "clock_in" | "clock_out"
+      conversation_type: "direct" | "group"
       dar_entry_type:
         | "patrol"
         | "observation"
@@ -1443,6 +2245,7 @@ export type Database = {
         | "completed"
         | "missed"
         | "cancelled"
+      sos_status: "active" | "acknowledged" | "resolved" | "false_alarm"
       timesheet_status: "pending" | "approved"
       user_role: "admin" | "supervisor" | "officer"
     }
@@ -1573,6 +2376,7 @@ export const Constants = {
   public: {
     Enums: {
       attendance_type: ["clock_in", "clock_out"],
+      conversation_type: ["direct", "group"],
       dar_entry_type: ["patrol", "observation", "visitor", "handover", "other"],
       device_platform: ["ios", "android"],
       employment_status: ["active", "suspended", "terminated"],
@@ -1587,6 +2391,7 @@ export const Constants = {
         "missed",
         "cancelled",
       ],
+      sos_status: ["active", "acknowledged", "resolved", "false_alarm"],
       timesheet_status: ["pending", "approved"],
       user_role: ["admin", "supervisor", "officer"],
     },

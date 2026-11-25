@@ -128,7 +128,10 @@ async function deliver(notifications: Notification[]) {
             data: { ...n.data, type: n.type, notification_id: n.id },
             sound: 'default',
             priority: 'high',
-            channelId: 'default',
+            // SOS alerts use their own Android channel (max importance, set up by
+            // the app) and iOS "time-sensitive" delivery.
+            channelId: n.type === 'sos' ? 'sos' : 'default',
+            ...(n.type === 'sos' ? { interruptionLevel: 'time-sensitive' } : {}),
           })),
         ),
       });
@@ -301,11 +304,22 @@ async function mayCreate(request: Request): Promise<boolean> {
   if (token === SERVICE_ROLE_KEY) return true;
   const { data, error } = await db.auth.getClaims(token);
   const claims = data?.claims as Record<string, unknown> | undefined;
-  return (
-    !error &&
-    claims?.employment_status === 'active' &&
-    (claims?.user_role === 'admin' || claims?.user_role === 'supervisor')
-  );
+  if (
+    error ||
+    claims?.employment_status !== 'active' ||
+    (claims?.user_role !== 'admin' && claims?.user_role !== 'supervisor') ||
+    typeof claims.sub !== 'string'
+  ) {
+    return false;
+  }
+  // The token can be up to an hour old: the live profile must still say active
+  // with the same role (a suspended or demoted user is refused at once).
+  const { data: profile } = await db
+    .from('profiles')
+    .select('role, employment_status')
+    .eq('id', claims.sub)
+    .maybeSingle();
+  return profile?.employment_status === 'active' && profile.role === claims.user_role;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

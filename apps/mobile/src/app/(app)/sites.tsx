@@ -39,7 +39,11 @@ function MySites({ userId }: { userId: string }) {
       {sites.isPending ? (
         <ActivityIndicator color={brand.gold} />
       ) : sites.isError ? (
-        <ErrorState message="Couldn't load your sites." onRetry={() => void sites.refetch()} />
+        <ErrorState
+          message="Couldn't load your sites."
+          onRetry={() => void sites.refetch()}
+          error={sites.error}
+        />
       ) : sites.data.length === 0 ? (
         <Card>
           <Text className="text-base text-white/80">

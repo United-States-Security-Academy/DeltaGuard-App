@@ -185,7 +185,7 @@ async function renderPdf(
   const title = `Incident report: ${incidentCategoryLabel(incident.category)}`;
   doc.setTitle(title);
   doc.setAuthor(COMPANY_NAME);
-  doc.setCreator('DeltaGuard');
+  doc.setCreator('Deltacon Guard');
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const w = new Writer(doc, font, bold);

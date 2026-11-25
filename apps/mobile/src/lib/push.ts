@@ -1,10 +1,13 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { AndroidImportance } from 'expo-notifications';
+import { AndroidImportance, AndroidNotificationVisibility } from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { MESSAGE_NOTIFICATION_TYPE } from '@deltaguard/shared';
+
 import { getOrCreateDeviceId } from './device';
+import { getOpenConversation } from './messaging';
 import { brand } from './theme';
 import { supabase } from './supabase';
 
@@ -18,14 +21,23 @@ import { supabase } from './supabase';
 //
 // Push needs a development or store build: Expo Go can't receive them.
 
-// Show alerts that arrive while the app is open, like ones that arrive in the background.
+// Show alerts that arrive while the app is open, like ones that arrive in the
+// background, except a chat message for the conversation already on screen
+// (it appears in the chat itself).
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
+  handleNotification: async (notification) => {
+    const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
+    const onScreen =
+      data.type === MESSAGE_NOTIFICATION_TYPE &&
+      typeof data.conversation_id === 'string' &&
+      data.conversation_id === getOpenConversation();
+    return {
+      shouldShowBanner: !onScreen,
+      shouldShowList: !onScreen,
+      shouldPlaySound: !onScreen,
+      shouldSetBadge: true,
+    };
+  },
 });
 
 /** The EAS project id (written to app.json by `eas init`). */
@@ -44,6 +56,17 @@ async function ensureAndroidChannel() {
     importance: AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: brand.gold,
+  });
+  // SOS alerts: highest importance (heads-up, sound) on their own channel, so
+  // they can't be confused with routine alerts. The server sends type 'sos'
+  // with channelId 'sos'.
+  await Notifications.setNotificationChannelAsync('sos', {
+    name: 'SOS alerts',
+    importance: AndroidImportance.MAX,
+    vibrationPattern: [0, 500, 200, 500, 200, 500],
+    lightColor: '#DC2626',
+    bypassDnd: true,
+    lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
   });
 }
 

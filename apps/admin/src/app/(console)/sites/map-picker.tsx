@@ -6,13 +6,9 @@ import type * as Leaflet from 'leaflet';
 import type { Circle, Map as LeafletMap, Marker } from 'leaflet';
 import { useEffect, useRef, useState } from 'react';
 
-type LeafletModule = typeof Leaflet;
+import { addBaseLayers } from '@/lib/map-layers';
 
-// OpenStreetMap's public tile server: free, no API key. Its usage policy
-// requires the attribution below and fair use (fine for an internal console).
-const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors';
+type LeafletModule = typeof Leaflet;
 
 // Deltacon navy and gold.
 const PIN_HTML =
@@ -77,7 +73,7 @@ export function MapPicker({
         center: hasPin ? [start.latitude!, start.longitude!] : (start.fallbackCenter ?? [20, 0]),
         zoom: hasPin ? 16 : start.fallbackCenter ? 12 : 2,
       });
-      L.tileLayer(TILE_URL, { maxZoom: 19, attribution: ATTRIBUTION }).addTo(map);
+      addBaseLayers(L, map);
       map.on('click', (e) => onPickRef.current(roundCoord(e.latlng.lat), roundCoord(e.latlng.lng)));
 
       leafletRef.current = { L, map, marker: null, circle: null };

@@ -4,7 +4,7 @@ import { LoginForm } from './login-form';
 
 const NOTICES: Record<string, string> = {
   not_allowed:
-    'You were signed out: this account does not have access to the admin console. Officers use the DeltaGuard mobile app.',
+    'You were signed out: this account does not have access to the admin console. Officers use the Deltacon Guard mobile app.',
   link_invalid: 'That link is invalid or has expired. Ask an admin to send a new invite.',
 };
 
