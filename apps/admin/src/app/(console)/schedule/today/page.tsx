@@ -1,12 +1,8 @@
 import {
-  addDaysIso,
   attendanceFlagLabel,
   firstParam,
   formatDate,
   formatTimeRange,
-  fromZoned,
-  type ShiftStatus,
-  todayInZone,
   toZoned,
 } from '@deltaguard/shared';
 import Link from 'next/link';
@@ -18,11 +14,22 @@ import { Badge, type BadgeTone, EmptyState, ErrorText, Table } from '@/component
 import { requireStaff } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
-import { expiredOn, getTimeZone, licenceExpiries } from '../data';
+import { getTimeZone } from '../data';
 import { LiveRefresh } from '../live-refresh';
 import { ScheduleTabs } from '../tabs';
+import { type BoardRow, compareBoardRows, loadTodayBoard } from './board';
+import { StageBadge } from './stage-badge';
 
-const FILTERS = ['all', 'on_shift', 'late', 'missed', 'flagged', 'upcoming', 'finished'] as const;
+const FILTERS = [
+  'all',
+  'covered',
+  'on_shift',
+  'late',
+  'missed',
+  'flagged',
+  'upcoming',
+  'finished',
+] as const;
 type Filter = (typeof FILTERS)[number];
 const filterSchema = z.preprocess(firstParam, z.enum(FILTERS)).catch('all');
 
@@ -37,37 +44,6 @@ export default function TodayPage({ searchParams }: PageProps<'/schedule/today'>
   );
 }
 
-/** Where a shift stands right now. */
-type Stage = 'not_in' | 'missed' | 'on_shift' | 'upcoming' | 'finished';
-
-type BoardRow = {
-  id: string;
-  officerId: string;
-  officerName: string;
-  phone: string | null;
-  siteName: string;
-  startsAt: string;
-  endsAt: string;
-  status: ShiftStatus;
-  stage: Stage;
-  clockIn: string | null;
-  clockOut: string | null;
-  /** Minutes after the start: late clock-in, or how long they've been absent. */
-  minutesLate: number | null;
-  late: boolean;
-  /** Exception flags other than "late", plus refused attempts. */
-  flags: string[];
-  expiredLicences: string[];
-};
-
-const STAGE_ORDER: Record<Stage, number> = {
-  not_in: 0,
-  missed: 1,
-  on_shift: 2,
-  upcoming: 3,
-  finished: 4,
-};
-
 async function TodayBoard({
   searchParams,
 }: {
@@ -79,89 +55,14 @@ async function TodayBoard({
   const supabase = await createClient();
   const timeZone = await getTimeZone(supabase);
   const now = new Date();
-  const today = todayInZone(timeZone, now);
-  const dayStart = fromZoned(today, '00:00', timeZone).toISOString();
-  const dayEnd = fromZoned(addDaysIso(today, 1), '00:00', timeZone).toISOString();
-
-  // Every shift that touches today, including overnight ones from yesterday.
-  const shifts = await supabase
-    .from('shifts')
-    .select(
-      'id, officer_id, starts_at, ends_at, status, sites(name), officer:profiles!shifts_officer_id_fkey(full_name, phone)',
-    )
-    .neq('status', 'cancelled')
-    .lt('starts_at', dayEnd)
-    .gt('ends_at', dayStart)
-    .order('starts_at');
-  if (shifts.error)
-    return <ErrorText>Could not load today’s shifts: {shifts.error.message}</ErrorText>;
-
-  const shiftIds = shifts.data.map((s) => s.id);
-  const [events, expiries] = await Promise.all([
-    shiftIds.length
-      ? supabase
-          .from('attendance_events')
-          .select('shift_id, type, recorded_at, flags, accepted')
-          .in('shift_id', shiftIds)
-          .order('recorded_at')
-      : Promise.resolve({ data: [], error: null }),
-    licenceExpiries(supabase, [...new Set(shifts.data.map((s) => s.officer_id))]),
-  ]);
-  if (events.error) return <ErrorText>Could not load attendance: {events.error.message}</ErrorText>;
-
-  const rows: BoardRow[] = shifts.data.map((s) => {
-    const mine = events.data.filter((e) => e.shift_id === s.id);
-    const clockIn = mine.find((e) => e.accepted && e.type === 'clock_in') ?? null;
-    const clockOut = mine.find((e) => e.accepted && e.type === 'clock_out') ?? null;
-    const started = Date.parse(s.starts_at) <= now.getTime();
-
-    const stage: Stage =
-      s.status === 'missed'
-        ? 'missed'
-        : s.status === 'completed'
-          ? 'finished'
-          : s.status === 'in_progress'
-            ? 'on_shift'
-            : started
-              ? 'not_in'
-              : 'upcoming';
-
-    const minutesAfterStart = (t: number) =>
-      Math.max(0, Math.round((t - Date.parse(s.starts_at)) / 60_000));
-    const lateArrival = clockIn !== null && clockIn.flags.includes('late');
-    const minutesLate = lateArrival
-      ? minutesAfterStart(Date.parse(clockIn.recorded_at))
-      : stage === 'not_in'
-        ? minutesAfterStart(now.getTime())
-        : null;
-
-    const flags = new Set<string>();
-    for (const e of mine) {
-      if (!e.accepted) flags.add('refused');
-      else for (const f of e.flags) if (f !== 'late') flags.add(f);
-    }
-
-    return {
-      id: s.id,
-      officerId: s.officer_id,
-      officerName: s.officer?.full_name ?? 'Unnamed officer',
-      phone: s.officer?.phone ?? null,
-      siteName: s.sites?.name ?? 'Unknown site',
-      startsAt: s.starts_at,
-      endsAt: s.ends_at,
-      status: s.status,
-      stage,
-      clockIn: clockIn?.recorded_at ?? null,
-      clockOut: clockOut?.recorded_at ?? null,
-      minutesLate,
-      late: lateArrival || stage === 'not_in',
-      flags: [...flags],
-      expiredLicences: expiredOn(expiries.get(s.officer_id), today),
-    };
-  });
+  const board = await loadTodayBoard(supabase, timeZone, now);
+  if (!board.ok) return <ErrorText>{board.error}</ErrorText>;
+  const { today, rows } = board;
 
   const matches: Record<Filter, (r: BoardRow) => boolean> = {
     all: () => true,
+    // Clocked in: on shift now or finished (the dashboard's "covered").
+    covered: (r) => r.stage === 'on_shift' || r.stage === 'finished',
     on_shift: (r) => r.stage === 'on_shift',
     late: (r) => r.late,
     missed: (r) => r.stage === 'missed',
@@ -169,14 +70,7 @@ async function TodayBoard({
     upcoming: (r) => r.stage === 'upcoming',
     finished: (r) => r.stage === 'finished',
   };
-  const visible = rows
-    .filter(matches[filter])
-    .sort(
-      (a, b) =>
-        STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage] ||
-        Number(b.flags.length > 0) - Number(a.flags.length > 0) ||
-        a.startsAt.localeCompare(b.startsAt),
-    );
+  const visible = rows.filter(matches[filter]).sort(compareBoardRows);
 
   const tiles: { key: Filter; label: string; tone: BadgeTone }[] = [
     { key: 'on_shift', label: 'On shift', tone: 'good' },
@@ -204,10 +98,10 @@ async function TodayBoard({
               key={t.key}
               href={active ? '/schedule/today' : `/schedule/today?show=${t.key}`}
               aria-current={active ? 'true' : undefined}
-              className={`rounded-xl border p-3 transition-colors ${
+              className={`panel p-4 transition-shadow ${
                 active
-                  ? 'border-slate-900 dark:border-white'
-                  : 'border-slate-200 hover:border-slate-400 dark:border-slate-800 dark:hover:border-slate-600'
+                  ? 'ring-2 ring-gold'
+                  : 'hover:ring-1 hover:ring-slate-300 dark:hover:ring-slate-600'
               }`}
             >
               <div
@@ -223,7 +117,7 @@ async function TodayBoard({
 
       {filter !== 'all' ? (
         <p className="text-sm text-slate-500">
-          Showing {tiles.find((t) => t.key === filter)?.label.toLowerCase()} only.{' '}
+          Showing {(tiles.find((t) => t.key === filter)?.label ?? 'covered').toLowerCase()} only.{' '}
           <Link href="/schedule/today" className="underline">
             Show all
           </Link>
@@ -314,20 +208,3 @@ const TILE_TEXT: Record<BadgeTone, string> = {
   bad: 'text-red-700 dark:text-red-400',
   neutral: 'text-slate-900 dark:text-slate-100',
 };
-
-function StageBadge({ row }: { row: BoardRow }) {
-  switch (row.stage) {
-    case 'not_in':
-      return <Badge tone="bad">Not clocked in · {row.minutesLate} min</Badge>;
-    case 'missed':
-      return <Badge tone="bad">Missed</Badge>;
-    case 'on_shift':
-      return <Badge tone="good">On shift</Badge>;
-    case 'upcoming':
-      return (
-        <Badge>{row.status === 'acknowledged' ? 'Upcoming · acknowledged' : 'Upcoming'}</Badge>
-      );
-    case 'finished':
-      return <Badge>Finished</Badge>;
-  }
-}

@@ -1,37 +1,13 @@
 'use client';
 
-import { DEFAULT_CLOCK_IN_RADIUS_M, type SiteContact } from '@deltaguard/shared';
+import { DEFAULT_CLOCK_IN_RADIUS_M } from '@deltaguard/shared';
 import { useActionState, useState } from 'react';
 
 import { Button, Field, FormMessage, Select, Textarea } from '@/components/ui';
 
 import { createSite, updateSite } from './actions';
 import { MapPicker, roundCoord } from './map-picker';
-
-export type SiteValues = {
-  id?: string;
-  clientId: string;
-  name: string;
-  address: string;
-  latitude: number | null;
-  longitude: number | null;
-  radius: number;
-  emergencyInstructions: string;
-  contacts: SiteContact[];
-  active: boolean;
-};
-
-export const EMPTY_SITE: SiteValues = {
-  clientId: '',
-  name: '',
-  address: '',
-  latitude: null,
-  longitude: null,
-  radius: DEFAULT_CLOCK_IN_RADIUS_M,
-  emergencyInstructions: '',
-  contacts: [],
-  active: true,
-};
+import type { SiteValues } from './site-values';
 
 type ContactRow = { name: string; role: string; phone: string; email: string };
 

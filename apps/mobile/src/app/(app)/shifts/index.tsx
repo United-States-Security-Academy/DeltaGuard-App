@@ -45,7 +45,11 @@ function MyShifts({ userId }: { userId: string }) {
       {shifts.isPending ? (
         <ActivityIndicator color={brand.gold} />
       ) : shifts.isError ? (
-        <ErrorState message="Couldn't load your shifts." onRetry={() => void shifts.refetch()} />
+        <ErrorState
+          message="Couldn't load your shifts."
+          onRetry={() => void shifts.refetch()}
+          error={shifts.error}
+        />
       ) : list.length === 0 ? (
         <Card>
           <Text className="text-base text-white/80">

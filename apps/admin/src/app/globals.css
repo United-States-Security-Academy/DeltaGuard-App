@@ -1,26 +1,86 @@
 @import 'tailwindcss';
 
+/*
+ * Theme: Deltacon palette (ink #050E1D, navy #10213A, gold #D6B562, white).
+ * <html data-theme="light|dark"> is set before first paint by the inline script in
+ * app/layout.tsx (saved choice, else the OS setting). `dark:` classes follow it.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --page: #e6ebf1;
+  --surface: #ffffff;
+  --surface-2: #f3f5f9;
+  --line: #e3e8ef;
+  --fg: #050e1d;
+  --muted: #5f6e86;
+  /* Gold that is readable as text on white. */
+  --accent-ink: #8a6a1f;
+  --panel-shadow: 0 1px 2px rgb(5 14 29 / 0.04), 0 12px 32px -16px rgb(5 14 29 / 0.18);
+  /* Chart series (validated for colour-blind separation and 3:1 contrast). */
+  --chart-1: #9c7724;
+  --chart-2: #3563b0;
+  --chart-3: #c9483c;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --page: #050e1d;
+  --surface: #0c1a2e;
+  --surface-2: #10213a;
+  --line: #1b2c46;
+  --fg: #eef1f6;
+  --muted: #8a98ae;
+  --accent-ink: #d6b562;
+  --panel-shadow: 0 0 0 1px #1b2c46;
+  --chart-1: #b08a38;
+  --chart-2: #4f7cc8;
+  --chart-3: #cf5a49;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-ink: #050e1d;
+  --color-navy: #10213a;
+  --color-gold: #d6b562;
+
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent-ink: var(--accent-ink);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+
+  /* Slate re-tinted towards Deltacon navy, so every page picks up the palette. */
+  --color-slate-50: #f4f6f9;
+  --color-slate-100: #e8ecf2;
+  --color-slate-200: #d9e0ea;
+  --color-slate-300: #b6c1d1;
+  --color-slate-400: #8a98ae;
+  --color-slate-500: #5f6e86;
+  --color-slate-600: #46546b;
+  --color-slate-700: #2f3d54;
+  --color-slate-800: #1b2c46;
+  --color-slate-900: #10213a;
+  --color-slate-950: #050e1d;
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* A floating white (or navy) card, the console's main surface. */
+@utility panel {
+  background-color: var(--surface);
+  border-radius: 1.5rem;
+  box-shadow: var(--panel-shadow);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--page);
+  color: var(--fg);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }

@@ -8,7 +8,8 @@ import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 import { fallbackMapCenter } from '../data';
-import { EMPTY_SITE, SiteForm } from '../site-form';
+import { SiteForm } from '../site-form';
+import { EMPTY_SITE } from '../site-values';
 
 export default function NewSitePage({ searchParams }: PageProps<'/sites/new'>) {
   return (

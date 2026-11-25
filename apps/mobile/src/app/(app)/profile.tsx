@@ -81,7 +81,11 @@ function Profile({
       {details.isPending ? (
         <ActivityIndicator color={brand.gold} />
       ) : details.isError ? (
-        <ErrorState message="Couldn't load your details." onRetry={() => void details.refetch()} />
+        <ErrorState
+          message="Couldn't load your details."
+          onRetry={() => void details.refetch()}
+          error={details.error}
+        />
       ) : (
         <Card>
           <InfoRow label="Employee number" value={details.data.employeeNumber ?? '—'} />
@@ -113,6 +117,7 @@ function Profile({
         <ErrorState
           message="Couldn't load your qualifications."
           onRetry={() => void qualifications.refetch()}
+          error={qualifications.error}
         />
       ) : qualifications.data.length === 0 ? (
         <Body>No licences or certificates recorded yet.</Body>

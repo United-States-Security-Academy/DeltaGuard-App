@@ -128,7 +128,10 @@ async function deliver(notifications: Notification[]) {
             data: { ...n.data, type: n.type, notification_id: n.id },
             sound: 'default',
             priority: 'high',
-            channelId: 'default',
+            // SOS alerts use their own Android channel (max importance, set up by
+            // the app) and iOS "time-sensitive" delivery.
+            channelId: n.type === 'sos' ? 'sos' : 'default',
+            ...(n.type === 'sos' ? { interruptionLevel: 'time-sensitive' } : {}),
           })),
         ),
       });

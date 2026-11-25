@@ -28,6 +28,8 @@ const filtersSchema = z.object({
   site: z.preprocess(firstParam, z.uuid().optional()).catch(undefined),
   officer: z.preprocess(firstParam, z.uuid().optional()).catch(undefined),
   flagged: z.preprocess(firstParam, z.literal('1').optional()).catch(undefined),
+  // Awaiting approval only (linked from the dashboard).
+  pending: z.preprocess(firstParam, z.literal('1').optional()).catch(undefined),
 });
 
 export default function TimesheetsPage({ searchParams }: PageProps<'/timesheets'>) {
@@ -96,7 +98,8 @@ async function TimesheetsContent({
     (e) =>
       (!f.site || e.site_id === f.site) &&
       (!f.officer || e.officer_id === f.officer) &&
-      (!f.flagged || attention(e).length > 0),
+      (!f.flagged || attention(e).length > 0) &&
+      (!f.pending || e.status === 'pending'),
   );
   const pendingInPeriod = entries.filter((e) => e.status !== 'approved').length;
 
@@ -240,6 +243,10 @@ async function TimesheetsContent({
         <label className="flex items-center gap-2 py-2 text-sm">
           <input type="checkbox" name="flagged" value="1" defaultChecked={Boolean(f.flagged)} />
           Flagged only
+        </label>
+        <label className="flex items-center gap-2 py-2 text-sm">
+          <input type="checkbox" name="pending" value="1" defaultChecked={Boolean(f.pending)} />
+          Awaiting approval only
         </label>
         <Button type="submit">Apply</Button>
         <Link

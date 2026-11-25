@@ -152,3 +152,73 @@ export const INCIDENT_STATUS_LABELS: Record<IncidentStatus, string> = {
 export const INCIDENT_PHOTOS_BUCKET = 'incident-photos';
 export const INCIDENT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
 export const INCIDENT_MAX_PHOTOS = 10;
+
+// Messaging ----------------------------------------------------------------------
+
+/** Private bucket for chat images. Object path: <conversation_id>/<sender_id>/<random>.<ext> */
+export const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments';
+export const CHAT_ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const CHAT_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const CHAT_MESSAGE_MAX_LENGTH = 4000;
+/** Messages loaded per page (newest first). */
+export const CHAT_PAGE_SIZE = 30;
+/** Notification type used for chat pushes (kept out of the alert inbox). */
+export const MESSAGE_NOTIFICATION_TYPE = 'message';
+
+export const CONVERSATION_TYPES = ['direct', 'group'] as const;
+export type ConversationType = (typeof CONVERSATION_TYPES)[number];
+
+/** "<conversation_id>/<sender_id>/<random>.<ext>" */
+export function chatAttachmentPath(
+  conversationId: string,
+  senderId: string,
+  fileId: string,
+  ext: string,
+): string {
+  return `${conversationId}/${senderId}/${fileId}.${ext}`;
+}
+
+// SOS ----------------------------------------------------------------------------
+
+/** Press and hold the SOS button this long to start the countdown. */
+export const SOS_HOLD_MS = 2000;
+/** Seconds to cancel before the alert is sent. */
+export const SOS_COUNTDOWN_SECONDS = 5;
+/** While an alert is open (app in the foreground), send the position this often. */
+export const SOS_LOCATION_INTERVAL_MS = 30_000;
+/** Minutes without acknowledgement before the next escalation contact is alerted. */
+export const SOS_ESCALATION_MINUTES = 2;
+/** Emergency services (Deltacon operates in Texas, USA). */
+export const EMERGENCY_NUMBER = '911';
+
+export const SOS_STATUSES = ['active', 'acknowledged', 'resolved', 'false_alarm'] as const;
+export type SosStatus = (typeof SOS_STATUSES)[number];
+export const SOS_STATUS_LABELS: Record<SosStatus, string> = {
+  active: 'Active',
+  acknowledged: 'Acknowledged',
+  resolved: 'Resolved',
+  false_alarm: 'False alarm',
+};
+
+export const SOS_EVENT_LABELS: Record<string, string> = {
+  triggered: 'SOS raised',
+  notified: 'Staff alerted (push + SMS)',
+  escalated: 'Escalated to the next contact',
+  reminder: 'Staff reminded',
+  escalation_exhausted: 'Escalation list used up; staff reminded',
+  sms_sent: 'SMS sent',
+  sms_failed: 'SMS failed',
+  sms_skipped: 'SMS not sent',
+  acknowledged: 'Acknowledged',
+  resolved: 'Resolved',
+  false_alarm: 'Closed as a false alarm',
+  marked_safe: 'Officer marked themselves safe',
+  officer_called_emergency: 'Officer called emergency services',
+  officer_called_supervisor: 'Officer called a supervisor',
+  officer_sms_fallback: 'Officer opened the SMS fallback (no connection)',
+};
+
+/** Google Maps link for a position (works on phones and desktops). */
+export function mapLink(latitude: number | string, longitude: number | string): string {
+  return `https://maps.google.com/?q=${latitude},${longitude}`;
+}

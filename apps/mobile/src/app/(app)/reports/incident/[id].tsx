@@ -38,7 +38,11 @@ export default function IncidentScreen() {
   if (incident.isError || !incident.data) {
     return (
       <View className="flex-1 bg-ink p-5">
-        <ErrorState message="Couldn't load this report." onRetry={() => void incident.refetch()} />
+        <ErrorState
+          message="Couldn't load this report."
+          onRetry={() => void incident.refetch()}
+          error={incident.error}
+        />
       </View>
     );
   }

@@ -1,4 +1,4 @@
-import { toZoned } from '@deltaguard/shared';
+import { friendlyError, toZoned } from '@deltaguard/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
@@ -69,7 +69,9 @@ function PostOrderCard({
                 onPress={() => acknowledge.mutate(order)}
               />
               {acknowledge.isError ? (
-                <Notice tone="error">Couldn&apos;t acknowledge: {acknowledge.error.message}</Notice>
+                <Notice tone="error">
+                  {friendlyError(acknowledge.error, { action: 'acknowledge' })}
+                </Notice>
               ) : null}
             </View>
           )}
@@ -97,6 +99,7 @@ export function PostOrdersSection({
         <ErrorState
           message="Couldn't load the post orders."
           onRetry={() => void orders.refetch()}
+          error={orders.error}
         />
       </View>
     );
@@ -174,6 +177,7 @@ export function PostOrdersGate({
             <ErrorState
               message="Couldn't load the post orders. Check your connection."
               onRetry={() => void orders.refetch()}
+              error={orders.error}
             />
           ) : null}
           {all.map((o) => (

@@ -1,12 +1,13 @@
 import {
+  friendlyError,
   INCIDENT_CATEGORIES,
   INCIDENT_MAX_PHOTOS,
   INCIDENT_SEVERITIES,
   INCIDENT_SEVERITY_LABELS,
   incidentCategoryLabel,
-  type IncidentSeverity,
   todayInZone,
   toZoned,
+  type IncidentSeverity,
 } from '@deltaguard/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
@@ -244,7 +245,7 @@ function DraftForm({
         );
       }
     } catch (e) {
-      setPhotoError(`Couldn’t add the photo: ${(e as Error).message}`);
+      setPhotoError(friendlyError(e, { action: 'add the photo' }));
     } finally {
       setBusyPhotos(false);
     }
