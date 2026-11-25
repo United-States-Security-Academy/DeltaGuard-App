@@ -30,7 +30,7 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
     return {
       ok: false,
       message:
-        'This account does not have access to the admin console. Officers use the DeltaGuard mobile app.',
+        'This account does not have access to the admin console. Officers use the Deltacon Guard mobile app.',
     };
   }
 

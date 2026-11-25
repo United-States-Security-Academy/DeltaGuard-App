@@ -280,7 +280,9 @@ function Composer({
     if (source === 'camera') {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        setPhotoError('Camera access is off for DeltaGuard. Allow it in Settings to take photos.');
+        setPhotoError(
+          'Camera access is off for Deltacon Guard. Allow it in Settings to take photos.',
+        );
         return;
       }
       result = await ImagePicker.launchCameraAsync(options);

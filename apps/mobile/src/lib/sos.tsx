@@ -336,12 +336,12 @@ export function SosProvider({
     const fix = p?.fix ?? lastFixRef.current;
     const to = contactsRef.current[0]?.phone ?? '';
     const body =
-      `SOS from ${fullName ?? 'a DeltaGuard officer'}. I need help.` +
+      `SOS from ${fullName ?? 'a Deltacon Guard officer'}. I need help.` +
       (fix
         ? ` Location: ${mapLink(fix.latitude.toFixed(6), fix.longitude.toFixed(6))}` +
           (fix.accuracyM ? ` (within ${Math.round(fix.accuracyM)} m)` : '')
         : ' Location unknown.') +
-      ' (Sent by text: the DeltaGuard app has no connection.)';
+      ' (Sent by text: the Deltacon Guard app has no connection.)';
     smsOpened.current = true;
     void Linking.openURL(smsUrl(to, body)).catch(() => undefined);
     logAction({ type: 'officer_sms_fallback', at: new Date().toISOString(), data: { to } });

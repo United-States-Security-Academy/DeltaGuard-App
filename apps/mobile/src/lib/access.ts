@@ -18,7 +18,7 @@ export const ACCESS_MESSAGES = {
     'This account is registered to another phone. Ask an admin to reset your device, then sign in again.',
   deviceReset:
     'Your registered device was reset by an admin. Sign in again to register this phone.',
-  unsupported: 'DeltaGuard only runs on iOS and Android phones.',
+  unsupported: 'Deltacon Guard only runs on iOS and Android phones.',
 } as const;
 
 const denied = (message: string): AccessResult => ({ ok: false, kind: 'denied', message });

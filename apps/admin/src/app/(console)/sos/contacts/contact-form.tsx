@@ -39,7 +39,7 @@ export function ContactForm({
       />
       <div className="sm:col-span-3">
         <Select
-          label="Their DeltaGuard account (optional: they also get the push)"
+          label="Their Deltacon Guard account (optional: they also get the push)"
           name="user_id"
           defaultValue=""
         >

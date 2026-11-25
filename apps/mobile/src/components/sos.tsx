@@ -251,7 +251,7 @@ export function SosScreen() {
 
   const locationText =
     location === 'denied'
-      ? 'Location is off for DeltaGuard. Tell them where you are.'
+      ? 'Location is off for Deltacon Guard. Tell them where you are.'
       : location === 'unavailable' && !lastFix
         ? 'Couldn’t get your location. Tell them where you are.'
         : lastFix

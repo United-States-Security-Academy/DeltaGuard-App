@@ -1,4 +1,4 @@
-export const APP_NAME = 'DeltaGuard';
+export const APP_NAME = 'Deltacon Guard';
 export const COMPANY_NAME = 'Deltacon Security';
 
 // Keep in sync with the Postgres enums in supabase/migrations.

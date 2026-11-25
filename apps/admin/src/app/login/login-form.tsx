@@ -13,7 +13,7 @@ export function LoginForm({ notice }: { notice?: string }) {
   );
 
   return (
-    <AuthCard title="Sign in to DeltaGuard Admin">
+    <AuthCard title="Sign in to Deltacon Guard Admin">
       <form action={action} className="flex flex-col gap-4">
         <Field
           label="Email"
