@@ -4,6 +4,7 @@ import type { Database } from '@deltaguard/shared';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+import { hardenCookieOptions } from './cookies';
 import { supabaseEnv } from './env';
 
 /**
@@ -20,7 +21,9 @@ export async function createClient() {
       },
       setAll(cookiesToSet) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, hardenCookieOptions(options)),
+          );
         } catch {
           // Server Components can't set cookies. Safe to ignore: src/proxy.ts
           // refreshes the session on every request.

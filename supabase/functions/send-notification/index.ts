@@ -6,12 +6,13 @@
 //
 //   { "notification_ids": ["…"] }
 //     Push these inbox rows (sent by the database right after it creates
-//     them). Only rows still `pending` are pushed, so the call can't send
-//     anything that isn't already queued, and needs no secret.
+//     them). Only rows still `pending` are pushed. Database only: needs the
+//     shared secret header (_shared/cron-auth.ts).
 //
 //   { "action": "maintenance" }
 //     Every 5 minutes (pg_cron): retry pending pushes from the last 24 hours,
-//     then read Expo receipts for tickets older than 15 minutes.
+//     then read Expo receipts for tickets older than 15 minutes. Database
+//     only (shared secret).
 //
 //   { "user_ids": ["…"], "type": "…", "title": "…", "body": "…",
 //     "data": { … }, "dedupe_key": "…" }
@@ -22,10 +23,15 @@
 // uninstalled, or the token was replaced) clears that device's push_token.
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { z } from 'npm:zod@4.6.7';
+
+import { isCronRequest, unauthorized } from '../_shared/cron-auth.ts';
 
 const EXPO_SEND = 'https://exp.host/--/api/v2/push/send';
 const EXPO_RECEIPTS = 'https://exp.host/--/api/v2/push/getReceipts';
 const MAX_ATTEMPTS = 5;
+/** Pushes that must get through Do Not Disturb (Android channel "sos"). */
+const URGENT_TYPES = new Set(['sos', 'welfare_alarm', 'welfare_escalated']);
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -128,10 +134,13 @@ async function deliver(notifications: Notification[]) {
             data: { ...n.data, type: n.type, notification_id: n.id },
             sound: 'default',
             priority: 'high',
-            // SOS alerts use their own Android channel (max importance, set up by
-            // the app) and iOS "time-sensitive" delivery.
-            channelId: n.type === 'sos' ? 'sos' : 'default',
-            ...(n.type === 'sos' ? { interruptionLevel: 'time-sensitive' } : {}),
+            // SOS alerts, welfare alarms and escalations use their own Android
+            // channel (max importance, set up by the app) and iOS
+            // "time-sensitive" delivery; a welfare check prompt is time-sensitive.
+            channelId: URGENT_TYPES.has(n.type) ? 'sos' : 'default',
+            ...(URGENT_TYPES.has(n.type) || n.type === 'welfare_check'
+              ? { interruptionLevel: 'time-sensitive' }
+              : {}),
           })),
         ),
       });
@@ -324,9 +333,22 @@ async function mayCreate(request: Request): Promise<boolean> {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const uuid = z.string().regex(UUID);
+
+const deliverSchema = z.object({ notification_ids: z.array(uuid).min(1).max(500) });
+const maintenanceSchema = z.object({ action: z.literal('maintenance') });
+const sendSchema = z.object({
+  user_ids: z.array(uuid).min(1).max(500),
+  type: z.string().trim().min(1).max(50),
+  title: z.string().trim().min(1).max(200),
+  body: z.string().max(1000),
+  data: z.record(z.string(), z.unknown()).optional(),
+  dedupe_key: z.string().max(200).nullish(),
+});
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'Use POST' }, 405);
-  let body: Record<string, unknown>;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
@@ -334,49 +356,42 @@ Deno.serve(async (request) => {
   }
 
   try {
-    if (Array.isArray(body.notification_ids)) {
-      const ids = body.notification_ids.filter(
-        (x): x is string => typeof x === 'string' && UUID.test(x),
-      );
-      return json(await deliver(await pending(ids.slice(0, 500))));
+    const delivery = deliverSchema.safeParse(body);
+    if (delivery.success) {
+      if (!isCronRequest(request)) return unauthorized();
+      return json(await deliver(await pending(delivery.data.notification_ids)));
     }
 
-    if (body.action === 'maintenance') {
+    if (maintenanceSchema.safeParse(body).success) {
+      if (!isCronRequest(request)) return unauthorized();
       const delivered = await deliver(await pending());
       const receipts = await checkReceipts();
       return json({ delivered, receipts });
     }
 
-    if (Array.isArray(body.user_ids)) {
+    const send = sendSchema.safeParse(body);
+    if (send.success) {
       if (!(await mayCreate(request))) return json({ error: 'Not allowed' }, 403);
-      const userIds = body.user_ids.filter(
-        (x): x is string => typeof x === 'string' && UUID.test(x),
-      );
-      const { type, title, body: text, data, dedupe_key } = body as Record<string, unknown>;
-      if (
-        userIds.length === 0 ||
-        typeof type !== 'string' ||
-        typeof title !== 'string' ||
-        typeof text !== 'string'
-      ) {
-        return json({ error: 'user_ids, type, title and body are required' }, 400);
-      }
+      const input = send.data;
       // Creating the rows also asks for delivery (pg_net -> this function);
       // deliver now too, so the caller gets the result.
       const { error } = await db.rpc('notify_users', {
-        p_user_ids: userIds,
-        p_type: type,
-        p_title: title,
-        p_body: text,
-        p_data: data && typeof data === 'object' ? data : {},
-        p_dedupe_key: typeof dedupe_key === 'string' ? dedupe_key : null,
+        p_user_ids: input.user_ids,
+        p_type: input.type,
+        p_title: input.title,
+        p_body: input.body,
+        p_data: input.data ?? {},
+        p_dedupe_key: input.dedupe_key ?? null,
       });
-      if (error) return json({ error: error.message }, 400);
+      if (error) {
+        console.error('notify_users', error.message);
+        return json({ error: 'Could not create the notifications' }, 400);
+      }
       const { data: rows } = await db
         .from('notifications')
         .select('id')
-        .in('user_id', userIds)
-        .eq('type', type)
+        .in('user_id', input.user_ids)
+        .eq('type', input.type)
         .eq('push_status', 'pending')
         .gte('created_at', new Date(Date.now() - 60_000).toISOString());
       return json(await deliver(await pending((rows ?? []).map((r) => r.id as string))));

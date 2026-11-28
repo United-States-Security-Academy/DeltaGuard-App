@@ -9,6 +9,7 @@ import {
 } from '@deltaguard/shared';
 import { refresh } from 'next/cache';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireAdmin } from '@/lib/auth';
 import { text, UNIQUE_VIOLATION } from '@/lib/form-data';
@@ -63,7 +64,7 @@ export async function saveOfficerDetails(_prev: ActionState, fd: FormData): Prom
     .from('profiles')
     .update(profile.data)
     .eq('id', details.data.user_id);
-  if (profileError) return { ok: false, message: profileError.message };
+  if (profileError) return failed(profileError);
 
   const { error } = await supabase
     .from('officer_details')
@@ -76,7 +77,7 @@ export async function saveOfficerDetails(_prev: ActionState, fd: FormData): Prom
         fieldErrors: { employee_number: 'Another officer already has this employee number' },
       };
     }
-    return { ok: false, message: error.message };
+    return failed(error);
   }
 
   refresh();
@@ -119,7 +120,7 @@ export async function addQualification(_prev: ActionState, fd: FormData): Promis
   const { error } = await supabase.from('qualifications').insert(parsed.data);
   if (error) {
     await cleanUp();
-    return { ok: false, message: error.message };
+    return failed(error);
   }
 
   refresh();
@@ -138,7 +139,7 @@ export async function deleteQualification(_prev: ActionState, fd: FormData): Pro
     .delete()
     .eq('id', parsed.data.id)
     .select('document_path');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) return { ok: false, message: 'Qualification not found.' };
 
   // Supabase blocks deleting storage files with SQL, so remove the scan
@@ -150,7 +151,7 @@ export async function deleteQualification(_prev: ActionState, fd: FormData): Pro
       refresh();
       return {
         ok: false,
-        message: `Deleted, but the scan could not be removed: ${fileError.message}`,
+        message: 'Deleted, but the scan file could not be removed.',
       };
     }
   }

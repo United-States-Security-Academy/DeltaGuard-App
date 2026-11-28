@@ -24,7 +24,13 @@ export const totpCodeSchema = z
 
 export const setPasswordSchema = z
   .object({
-    password: z.string().min(10, 'Use at least 10 characters').max(200),
+    // Same rule as Supabase Auth (minimum_password_length 10, letters_digits).
+    password: z
+      .string()
+      .min(10, 'Use at least 10 characters')
+      .max(200)
+      .regex(/[A-Za-z]/, 'Include at least one letter')
+      .regex(/[0-9]/, 'Include at least one number'),
     confirm: z.string(),
   })
   .refine((v) => v.password === v.confirm, {

@@ -1,12 +1,14 @@
 import type { User } from '@supabase/supabase-js';
 import { Suspense } from 'react';
 
+import { Badge } from '@/components/ui';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
 import { InviteUserForm } from './invite-user-form';
 import { UserRowActions } from './user-row-actions';
+import { loadFailed } from '@/lib/server-errors';
 
 export default function UsersPage() {
   return (
@@ -30,12 +32,15 @@ async function UsersContent() {
       .from('profiles')
       .select('id, full_name, phone, role, employment_status')
       .order('full_name', { ascending: true, nullsFirst: false }),
-    supabase.from('user_devices').select('user_id, platform, registered_at').is('revoked_at', null),
+    supabase
+      .from('user_devices')
+      .select('user_id, platform, registered_at, integrity_status, integrity_checked_at, integrity_signals')
+      .is('revoked_at', null),
     listAllAuthUsers(),
   ]);
 
   if (profiles.error) {
-    return <p className="text-red-600">Could not load users: {profiles.error.message}</p>;
+    return <p className="text-red-600">{loadFailed('users', profiles.error)}</p>;
   }
 
   const emailById = new Map(authUsers.map((u) => [u.id, u]));
@@ -87,6 +92,10 @@ async function UsersContent() {
                         <div className="text-slate-500">
                           since {new Date(device.registered_at).toLocaleDateString('en-GB')}
                         </div>
+                        <IntegrityBadge
+                          status={device.integrity_status}
+                          signals={device.integrity_signals}
+                        />
                       </>
                     ) : (
                       <span className="text-slate-500">None</span>
@@ -139,4 +148,25 @@ async function listAllAuthUsers(): Promise<User[]> {
     users.push(...data.users);
     if (data.users.length < perPage) return users;
   }
+}
+
+const SIGNAL_LABELS: Record<string, string> = {
+  rooted: 'rooted / jailbroken',
+  emulator: 'emulator',
+  mock_location: 'fake-location app',
+};
+
+/** The phone's latest App Attest / Play Integrity verdict and self-reported signals. */
+function IntegrityBadge({ status, signals }: { status: string; signals: string[] }) {
+  const flagged = status === 'failed' || signals.length > 0;
+  const text = flagged
+    ? `Security warning${signals.length ? `: ${signals.map((s) => SIGNAL_LABELS[s] ?? s).join(', ')}` : ''}`
+    : status === 'verified'
+      ? 'Genuine app verified'
+      : 'Not verified yet';
+  return (
+    <div className="mt-1">
+      <Badge tone={flagged ? 'bad' : status === 'verified' ? 'good' : 'neutral'}>{text}</Badge>
+    </div>
+  );
 }

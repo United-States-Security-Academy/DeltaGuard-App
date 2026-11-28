@@ -102,6 +102,8 @@ export const settingsSchema = z.object({
   early_clock_in_minutes: z.number().int().min(0).max(720),
   low_accuracy_threshold_m: z.number().int().min(5).max(5000),
   time_zone: z.string().refine(isValidTimeZone, 'Unknown time zone'),
+  /** Phones that fail the integrity check: flag their actions, or refuse them (phase 20). */
+  integrity_enforcement: z.enum(['monitor', 'block']),
 });
 export type SettingsInput = z.infer<typeof settingsSchema>;
 

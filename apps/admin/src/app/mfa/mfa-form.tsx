@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
 import { AuthCard, Button, Field, FormMessage } from '@/components/ui';
-import { createClient } from '@/lib/supabase/client';
 
 import { signOut } from '../actions';
+import { startMfa, verifyMfa } from './actions';
 
 type Step =
   | { kind: 'loading' }
@@ -15,8 +15,7 @@ type Step =
   | { kind: 'verify'; factorId: string }
   | { kind: 'error'; message: string };
 
-// MFA runs in the browser: Supabase upgrades the session to aal2 when the
-// code is verified, and the browser client writes the new session cookie.
+// The checks run on the server (./actions.ts): the session cookie is httpOnly.
 export function MfaForm() {
   const router = useRouter();
   const [step, setStep] = useState<Step>({ kind: 'loading' });
@@ -28,34 +27,9 @@ export function MfaForm() {
     // React runs effects twice in development; enroll only once.
     if (started.current) return;
     started.current = true;
-
-    const supabase = createClient();
-    (async () => {
-      const { data, error } = await supabase.auth.mfa.listFactors();
-      if (error) return setStep({ kind: 'error', message: error.message });
-
-      const verified = data.totp.find((f) => f.status === 'verified');
-      if (verified) return setStep({ kind: 'verify', factorId: verified.id });
-
-      // Clear half-finished enrollments from earlier attempts.
-      for (const f of data.all.filter(
-        (f) => f.factor_type === 'totp' && f.status === 'unverified',
-      )) {
-        await supabase.auth.mfa.unenroll({ factorId: f.id });
-      }
-
-      const enrolled = await supabase.auth.mfa.enroll({
-        factorType: 'totp',
-        friendlyName: 'Deltacon Guard Admin',
-      });
-      if (enrolled.error) return setStep({ kind: 'error', message: enrolled.error.message });
-      setStep({
-        kind: 'enroll',
-        factorId: enrolled.data.id,
-        qrCode: enrolled.data.totp.qr_code,
-        secret: enrolled.data.totp.secret,
-      });
-    })();
+    startMfa().then(setStep, () =>
+      setStep({ kind: 'error', message: 'Couldn’t load two-factor settings. Try again.' }),
+    );
   }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -66,13 +40,12 @@ export function MfaForm() {
     if (!code.success) return setMessage({ ok: false, message: code.error.issues[0]!.message });
 
     setPending(true);
-    const { error } = await createClient().auth.mfa.challengeAndVerify({
-      factorId: step.factorId,
-      code: code.data,
-    });
+    const result = await verifyMfa(step.factorId, code.data).catch(() => ({
+      ok: false,
+      message: 'That code did not work. Try the next one.',
+    }));
     setPending(false);
-    if (error)
-      return setMessage({ ok: false, message: 'That code did not work. Try the next one.' });
+    if (!result.ok) return setMessage(result);
 
     router.replace('/');
     router.refresh();

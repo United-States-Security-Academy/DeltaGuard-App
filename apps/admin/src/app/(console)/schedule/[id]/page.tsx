@@ -21,7 +21,9 @@ import { createClient } from '@/lib/supabase/server';
 
 import { cancelShift } from '../actions';
 import { getTimeZone, loadFormOptions } from '../data';
+import { ShiftWelfare } from '../../welfare/shift-welfare';
 import { ShiftForm } from '../shift-form';
+import { loadFailed } from '@/lib/server-errors';
 
 type Props = PageProps<'/schedule/[id]'>;
 
@@ -38,7 +40,7 @@ export default function ShiftPage({ params, searchParams }: Props) {
 }
 
 async function ShiftContent({ params, searchParams }: Props) {
-  await requireStaff();
+  const staff = await requireStaff();
   const id = recordIdSchema.safeParse(await params);
   if (!id.success) notFound();
   const view = viewSchema.parse((await searchParams).view);
@@ -60,7 +62,7 @@ async function ShiftContent({ params, searchParams }: Props) {
     getTimeZone(supabase),
   ]);
   if (shiftResult.error) {
-    return <ErrorText>Could not load this shift: {shiftResult.error.message}</ErrorText>;
+    return <ErrorText>{loadFailed('this shift', shiftResult.error)}</ErrorText>;
   }
   const shift = shiftResult.data;
   if (!shift) notFound();
@@ -160,7 +162,7 @@ async function ShiftContent({ params, searchParams }: Props) {
 
       <Card title="Clock-in and clock-out">
         {events.error ? (
-          <ErrorText>Could not load attendance: {events.error.message}</ErrorText>
+          <ErrorText>{loadFailed('attendance', events.error)}</ErrorText>
         ) : events.data.length === 0 ? (
           <EmptyState>No clock-in yet.</EmptyState>
         ) : (
@@ -205,6 +207,16 @@ async function ShiftContent({ params, searchParams }: Props) {
           </Table>
         )}
       </Card>
+
+      {shift.status === 'in_progress' || shift.status === 'completed' ? (
+        <ShiftWelfare
+          supabase={supabase}
+          shiftId={shift.id}
+          shiftStatus={shift.status}
+          timeZone={timeZone}
+          isAdmin={staff.role === 'admin'}
+        />
+      ) : null}
     </>
   );
 }

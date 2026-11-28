@@ -181,10 +181,11 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+# Security audit (phase 18): matches the apps' 10-character rule, enforced by Auth itself.
+minimum_password_length = 10
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+password_requirements = "letters_digits"
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -206,7 +207,8 @@ anonymous_users = 30
 # Number of sessions that can be refreshed in a 5 minute interval per IP address.
 token_refresh = 150
 # Number of sign up and sign-in requests that can be made in a 5 minute interval per IP address (excludes anonymous users).
-sign_in_sign_ups = 30
+# Phase 18: lowered from 30 to slow password guessing (per IP).
+sign_in_sign_ups = 20
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
 # Number of Web3 logins that can be made in a 5 minute interval per IP address.
@@ -424,4 +426,30 @@ enabled = true
 verify_jwt = false
 
 [functions.sos-dispatch]
+verify_jwt = false
+
+# Called by Supabase Auth (Send Email hook) without a user JWT; it verifies the
+# hook's Standard Webhooks signature itself.
+[functions.send-email]
+verify_jwt = false
+
+# Called by the phone with the officer's access token. It verifies the token
+# (getClaims, works with the new signing keys) and the live profile itself.
+[functions.generate-filled-pdf]
+verify_jwt = false
+import_map = "./functions/generate-filled-pdf/deno.json"
+
+# Called by the database (pg_net) without a user JWT. It only places calls and
+# SMS already queued in welfare_outbox (see the function's header).
+[functions.welfare-escalation]
+verify_jwt = false
+
+# Called by the database only (storage trigger and pg_cron), with the shared
+# secret header; checks uploaded files' content.
+[functions.verify-upload]
+verify_jwt = false
+
+# Called by the phone with the officer's access token; verifies it (getClaims +
+# live profile) itself. App Attest / Play Integrity checks (phase 20).
+[functions.device-integrity]
 verify_jwt = false

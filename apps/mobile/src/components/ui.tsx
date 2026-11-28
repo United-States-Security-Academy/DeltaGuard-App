@@ -1,6 +1,7 @@
 import { errorKind, friendlyError } from '@deltaguard/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { type ReactNode, useState } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,14 +12,24 @@ import {
   View,
 } from 'react-native';
 
-import { brand, mutedWhite } from '@/lib/theme';
+import { brand, fx } from '@/lib/theme';
 
 // Brand palette (tailwind.config.js): ink #050E1D background, navy #10213A
 // surfaces, gold #D6B562 actions and highlights, white text. Red is kept only
 // for errors so they can't be mistaken for anything else.
+//
+// Look: flat ink pages, flat navy panels with soft depth, generous rounding
+// (pills for controls, 28 px for panels), solid gold for actions and what
+// matters now, small uppercase spaced labels. Effects live in `fx` (lib/theme.ts).
+
+type IconName = ComponentProps<typeof Ionicons>['name'];
 
 export function Screen({ children }: { children: ReactNode }) {
-  return <View className="flex-1 bg-ink px-6">{children}</View>;
+  return (
+    <View className="flex-1 px-6" style={fx.screen}>
+      {children}
+    </View>
+  );
 }
 
 /** Small gold label above a title, e.g. the company name. */
@@ -40,18 +51,25 @@ export function Notice({ tone, children }: { tone: 'error' | 'info'; children: R
   const error = tone === 'error';
   return (
     <View
-      className={`flex-row gap-3 rounded-2xl border p-4 ${
-        error ? 'border-red-400/40 bg-red-500/10' : 'border-gold/30 bg-navy'
+      className={`flex-row items-start gap-3 rounded-3xl border p-4 ${
+        error ? 'border-red-400/40 bg-red-500/10' : 'border-gold/25'
       }`}
+      style={error ? undefined : fx.glass}
     >
-      <Ionicons
-        name={error ? 'alert-circle-outline' : 'information-circle-outline'}
-        size={20}
-        color={error ? '#fca5a5' : brand.gold}
-      />
+      <View
+        className={`h-8 w-8 items-center justify-center rounded-full ${
+          error ? 'bg-red-500/15' : 'bg-gold/15'
+        }`}
+      >
+        <Ionicons
+          name={error ? 'alert-circle-outline' : 'information-circle-outline'}
+          size={18}
+          color={error ? '#fca5a5' : brand.gold}
+        />
+      </View>
       <Text
         accessibilityRole="alert"
-        className={`flex-1 text-sm leading-5 ${error ? 'text-red-200' : 'text-white/90'}`}
+        className={`flex-1 self-center text-sm leading-5 ${error ? 'text-red-200' : 'text-white/90'}`}
       >
         {children}
       </Text>
@@ -64,33 +82,77 @@ export function Input({
   error,
   onFocus,
   onBlur,
+  trailing,
   ...props
-}: TextInputProps & { label: string; error?: string }) {
+}: TextInputProps & {
+  label: string;
+  error?: string;
+  /** Inside the pill on the right, e.g. the show-password button. */
+  trailing?: ReactNode;
+}) {
   const [focused, setFocused] = useState(false);
+  // Single-line fields are pills; multi-line ones keep corners so text fits.
+  const shape = props.multiline ? 'rounded-3xl' : 'rounded-full';
   return (
     <View className="gap-2">
-      <Text className="text-sm font-medium text-white/80">{label}</Text>
-      <TextInput
-        className={`rounded-2xl border bg-navy px-4 py-4 text-base text-white ${
-          error ? 'border-red-400/70' : focused ? 'border-gold' : 'border-white/10'
-        }`}
-        placeholderTextColor={mutedWhite}
-        selectionColor={brand.gold}
-        cursorColor={brand.gold}
-        keyboardAppearance="dark"
-        accessibilityLabel={label}
-        onFocus={(e) => {
-          setFocused(true);
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setFocused(false);
-          onBlur?.(e);
-        }}
-        {...props}
-      />
-      {error ? <Text className="text-sm text-red-300">{error}</Text> : null}
+      <Text className="ml-4 text-xs font-semibold uppercase tracking-[2px] text-white/60">
+        {label}
+      </Text>
+      <View className="justify-center">
+        <TextInput
+          className={`border-2 bg-navy py-4 pl-6 text-base text-white ${trailing ? 'pr-16' : 'pr-6'} ${shape} ${
+            error ? 'border-red-400/70' : focused ? 'border-gold' : 'border-gold/15'
+          }`}
+          style={focused && !error ? fx.focusGlow : undefined}
+          placeholderTextColor="rgba(255,255,255,0.38)"
+          selectionColor={brand.gold}
+          cursorColor={brand.gold}
+          keyboardAppearance="dark"
+          accessibilityLabel={label}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          {...props}
+        />
+        {trailing ? <View className="absolute right-2">{trailing}</View> : null}
+      </View>
+      {error ? <Text className="ml-4 text-sm text-red-300">{error}</Text> : null}
     </View>
+  );
+}
+
+/** Password field with an eye button to show what was typed (hidden by default). */
+export function PasswordInput(
+  props: Omit<TextInputProps, 'secureTextEntry'> & { label: string; error?: string },
+) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <Input
+      {...props}
+      secureTextEntry={!visible}
+      autoCapitalize="none"
+      autoCorrect={false}
+      trailing={
+        <Pressable
+          onPress={() => setVisible((v) => !v)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+          className="size-11 items-center justify-center rounded-full active:bg-white/10"
+        >
+          <Ionicons
+            name={visible ? 'eye-off-outline' : 'eye-outline'}
+            size={22}
+            color={brand.gold}
+          />
+        </Pressable>
+      }
+    />
   );
 }
 
@@ -100,21 +162,29 @@ export function Button({
   loading = false,
   disabled,
   ...props
-}: PressableProps & { title: string; variant?: 'primary' | 'secondary'; loading?: boolean }) {
+}: Omit<PressableProps, 'style'> & {
+  title: string;
+  variant?: 'primary' | 'secondary';
+  loading?: boolean;
+}) {
   const primary = variant === 'primary';
+  const inactive = disabled || loading;
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={disabled || loading}
-      className={`min-h-14 items-center justify-center rounded-2xl px-5 py-4 active:opacity-80 ${
-        primary ? 'bg-gold' : 'border border-white/15 bg-navy'
-      } ${disabled || loading ? 'opacity-60' : ''}`}
+      disabled={inactive}
+      className={`min-h-14 items-center justify-center rounded-full px-6 py-4 active:opacity-80 ${
+        primary ? '' : 'border border-gold/30'
+      } ${inactive ? 'opacity-60' : ''}`}
+      style={[primary ? fx.gold : fx.glass, primary && inactive ? { boxShadow: 'none' } : null]}
       {...props}
     >
       {loading ? (
         <ActivityIndicator color={primary ? brand.ink : brand.gold} />
       ) : (
-        <Text className={`text-base font-bold ${primary ? 'text-ink' : 'text-white'}`}>
+        <Text
+          className={`text-base font-bold tracking-wide ${primary ? 'text-ink' : 'text-white'}`}
+        >
           {title}
         </Text>
       )}
@@ -122,7 +192,7 @@ export function Button({
   );
 }
 
-/** Square back button, used at the top of auth screens. */
+/** Round back button, used at the top of auth screens. */
 export function BackButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
@@ -130,22 +200,23 @@ export function BackButton({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Back"
       hitSlop={8}
       onPress={onPress}
-      className="h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-navy active:opacity-70"
+      className="h-11 w-11 items-center justify-center rounded-full border border-gold/25 active:opacity-70"
+      style={fx.glass}
     >
-      <Ionicons name="chevron-back" size={22} color={brand.white} />
+      <Ionicons name="chevron-back" size={22} color={brand.gold} />
     </Pressable>
   );
 }
 
 export function Loading() {
   return (
-    <View className="flex-1 items-center justify-center bg-ink">
+    <View className="flex-1 items-center justify-center" style={fx.backdrop}>
       <ActivityIndicator color={brand.gold} />
     </View>
   );
 }
 
-/** Raised navy panel. `tone` adds a coloured edge for warnings. */
+/** Glass panel. `tone` adds a glow (warn: needs attention now) or a red edge. */
 export function Card({
   children,
   tone = 'default',
@@ -154,24 +225,49 @@ export function Card({
   tone?: 'default' | 'warn' | 'danger';
 }) {
   const border = {
-    default: 'border-white/10',
-    warn: 'border-gold',
+    default: 'border-white/[0.07]',
+    warn: 'border-gold/60',
     danger: 'border-red-400/70',
   }[tone];
-  return <View className={`gap-3 rounded-2xl border bg-navy p-4 ${border}`}>{children}</View>;
+  return (
+    <View
+      className={`gap-3 rounded-[28px] border p-5 ${border}`}
+      style={tone === 'warn' ? fx.glassGlow : fx.glass}
+    >
+      {children}
+    </View>
+  );
 }
 
-/** Heading for a group of cards. */
+/** Heading for a group of cards: small, spaced, uppercase. */
 export function SectionTitle({ children }: { children: ReactNode }) {
-  return <Text className="mt-2 text-lg font-bold text-white">{children}</Text>;
+  return (
+    <Text className="ml-1 mt-3 text-xs font-bold uppercase tracking-[3px] text-white/55">
+      {children}
+    </Text>
+  );
 }
 
 /** Label / value pair inside a card. */
 export function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <View className="gap-0.5">
-      <Text className="text-xs uppercase tracking-wider text-white/50">{label}</Text>
+      <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-white/45">
+        {label}
+      </Text>
       {typeof value === 'string' ? <Text className="text-base text-white">{value}</Text> : value}
+    </View>
+  );
+}
+
+/** A gold outline ring with an icon in it (tiles, empty states, modals). */
+export function IconRing({ name, size = 56 }: { name: IconName; size?: number }) {
+  return (
+    <View
+      className="items-center justify-center rounded-full border border-gold/40"
+      style={{ width: size, height: size, backgroundColor: 'rgba(214,181,98,0.08)' }}
+    >
+      <Ionicons name={name} size={Math.round(size * 0.45)} color={brand.gold} />
     </View>
   );
 }
@@ -212,13 +308,13 @@ export function Badge({
   tone?: 'gold' | 'muted' | 'danger';
 }) {
   const styles = {
-    gold: 'border-gold/40 bg-gold/15 text-gold',
+    gold: 'border-gold/50 bg-gold/15 text-gold',
     muted: 'border-white/15 bg-white/5 text-white/70',
     danger: 'border-red-400/40 bg-red-500/10 text-red-200',
   }[tone];
   return (
     <Text
-      className={`self-start overflow-hidden rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles}`}
+      className={`self-start overflow-hidden rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${styles}`}
     >
       {children}
     </Text>

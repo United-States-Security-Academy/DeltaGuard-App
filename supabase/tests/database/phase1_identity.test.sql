@@ -40,6 +40,9 @@ insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
 
 insert into public.user_devices (user_id, device_id, platform) values
   ('00000000-0000-0000-0000-0000000000a2', 'officer-b-phone', 'android');
+-- Phase 20: mark fixture phones verified, so attendance flags here stay
+-- about attendance (device flags have their own tests).
+update public.user_devices set integrity_status = 'verified', integrity_checked_at = now();
 
 -- Sets request.jwt.claims for a user the way Supabase Auth would.
 create function pg_temp.login_as(uid uuid) returns void language sql as $$

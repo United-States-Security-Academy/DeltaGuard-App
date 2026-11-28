@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Show the welfare prompt over the lock screen (Android 14+: the user may
+       have to allow it in settings; the app explains and links there). -->
+  <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+  <!-- Fire the prompt at the exact time (user-granted on Android 12+). -->
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+
+  <application>
+    <receiver
+      android:name="expo.modules.welfarealarm.WelfareAlarmReceiver"
+      android:exported="false" />
+  </application>
+</manifest>

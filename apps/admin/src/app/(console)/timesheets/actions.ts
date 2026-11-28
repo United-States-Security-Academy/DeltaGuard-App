@@ -10,12 +10,14 @@ import {
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireAdmin, requireStaff } from '@/lib/auth';
 import { json, text } from '@/lib/form-data';
 import { createClient } from '@/lib/supabase/server';
 
 import { getTimeZone } from '../schedule/data';
+import { publicMessage } from '@/lib/server-errors';
 
 // Timesheets: corrections and approval (admins and supervisors), pay periods
 // and locking (admins). The database functions enforce the same rules, audit
@@ -39,7 +41,9 @@ export async function createPayPeriod(_prev: ActionState, fd: FormData): Promise
     return {
       ok: false,
       message:
-        error.code === '23P01' ? 'This period overlaps an existing pay period.' : error.message,
+        error.code === '23P01'
+          ? 'This period overlaps an existing pay period.'
+          : publicMessage(error, 'save'),
     };
   }
   redirect(`/timesheets?period=${data.id}`);
@@ -51,7 +55,7 @@ export async function deletePayPeriod(_prev: ActionState, fd: FormData): Promise
   if (!id.success) return invalid(id.error);
   const supabase = await createClient();
   const { error } = await supabase.from('pay_periods').delete().eq('id', id.data.id);
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   redirect('/timesheets');
 }
 
@@ -61,7 +65,7 @@ export async function lockPayPeriod(_prev: ActionState, fd: FormData): Promise<A
   if (!id.success) return invalid(id.error);
   const supabase = await createClient();
   const { error } = await supabase.rpc('lock_pay_period', { p_period_id: id.data.id });
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   refresh();
   return { ok: true, message: 'Pay period locked.' };
 }
@@ -75,7 +79,7 @@ export async function approveEntries(_prev: ActionState, fd: FormData): Promise<
   const { data, error } = await supabase.rpc('approve_timesheet_entries', {
     p_entry_ids: parsed.data.ids,
   });
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   refresh();
   const skipped = parsed.data.ids.length - data;
   return {
@@ -113,7 +117,7 @@ export async function correctEntry(_prev: ActionState, fd: FormData): Promise<Ac
     p_clock_out_at: times.clockOut.toISOString(),
     p_reason: parsed.data.reason,
   });
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   refresh();
   return { ok: true, message: 'Correction saved. The entry needs approving again.' };
 }

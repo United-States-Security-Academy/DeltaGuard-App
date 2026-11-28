@@ -8,6 +8,7 @@ import { requireStaff } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 import { PostOrderForm } from '../post-order-form';
+import { loadFailed } from '@/lib/server-errors';
 
 type Props = PageProps<'/sites/[id]/post-orders/new'>;
 
@@ -32,7 +33,7 @@ async function NewPostOrderContent({ params }: Pick<Props, 'params'>) {
     .select('id, name')
     .eq('id', id.data.id)
     .maybeSingle();
-  if (error) return <ErrorText>Could not load this site: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('this site', error)}</ErrorText>;
   if (!site) notFound();
 
   return (

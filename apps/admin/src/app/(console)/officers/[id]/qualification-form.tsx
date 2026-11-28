@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  checkFile,
   LICENSE_FILE_EXTENSIONS,
   LICENSE_FILE_MIME_TYPES,
   licenseFileSchema,
@@ -16,9 +17,11 @@ import {
 } from 'react';
 
 import { Button, Field, FormMessage } from '@/components/ui';
+import { reencodeImage } from '@/lib/reencode-image';
 import { createClient } from '@/lib/supabase/client';
 
 import { addQualification } from '../actions';
+import { consoleError } from '@/lib/errors';
 
 /**
  * Add a licence or certificate, with an optional scan. The scan is uploaded
@@ -51,13 +54,36 @@ export function QualificationForm({ userId }: { userId: string }) {
         return;
       }
       setUploading(true);
-      const path = `${userId}/${crypto.randomUUID()}.${LICENSE_FILE_EXTENSIONS[checked.data.type]}`;
+      // Images are redrawn as a fresh JPEG (see reencodeImage); PDFs go as they are.
+      let body: Blob = file;
+      let type: string = checked.data.type;
+      if (type === 'application/pdf') {
+        // By content: a real PDF without scripts or attachments.
+        const checkedPdf = await checkFile('scan.pdf', new Uint8Array(await file.arrayBuffer()));
+        if (!checkedPdf.ok) {
+          setUploading(false);
+          setFileError(
+            'This PDF can’t be used (it is damaged, or contains scripts or attachments).',
+          );
+          return;
+        }
+      } else {
+        try {
+          body = await reencodeImage(file, { maxEdge: 3000, quality: 0.9 });
+          type = 'image/jpeg';
+        } catch (e) {
+          setUploading(false);
+          setFileError((e as Error).message);
+          return;
+        }
+      }
+      const path = `${userId}/${crypto.randomUUID()}.${LICENSE_FILE_EXTENSIONS[type as keyof typeof LICENSE_FILE_EXTENSIONS]}`;
       const { error } = await createClient()
         .storage.from(LICENSES_BUCKET)
-        .upload(path, file, { contentType: checked.data.type, upsert: false });
+        .upload(path, body, { contentType: type, upsert: false });
       setUploading(false);
       if (error) {
-        setFileError(`Upload failed: ${error.message}`);
+        setFileError(consoleError(error, 'upload the scan'));
         return;
       }
       fd.set('document_path', path);

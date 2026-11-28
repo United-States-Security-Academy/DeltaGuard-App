@@ -96,6 +96,25 @@ export function routeFor(type: string, data: Record<string, unknown>): Href {
     case 'shift_cancelled':
     case 'shift_reminder':
       return shiftId ? { pathname: '/shifts/[id]', params: { id: shiftId } } : '/shifts';
+    case 'form_assigned':
+      return '/forms';
+    case 'form_returned':
+    case 'form_approved':
+      return typeof data.submission_id === 'string'
+        ? { pathname: '/forms/[id]', params: { id: data.submission_id } }
+        : '/forms';
+    case 'lesson_assigned':
+    case 'lesson_due_soon':
+      return typeof data.lesson_id === 'string'
+        ? { pathname: '/training/[id]', params: { id: data.lesson_id } }
+        : '/training';
+    case 'welfare_local':
+    case 'welfare_check':
+    case 'welfare_alarm':
+    case 'welfare_return':
+    case 'welfare_battery':
+      // The prompt opens by itself when a check is due; this is the duty screen.
+      return '/on-duty';
     case 'licence_expiring':
       return typeof data.officer_id === 'string' ? '/notifications' : '/profile';
     default:

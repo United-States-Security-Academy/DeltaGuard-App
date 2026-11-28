@@ -77,7 +77,11 @@ export function Button({
   );
 }
 
-export function FormMessage({ state }: { state: { ok: boolean; message: string } | null }) {
+export function FormMessage({
+  state,
+}: {
+  state: { ok: boolean; message: string; reauthUrl?: string } | null;
+}) {
   if (!state?.message) return null;
   return (
     <p
@@ -85,6 +89,14 @@ export function FormMessage({ state }: { state: { ok: boolean; message: string }
       className={`text-sm ${state.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
     >
       {state.message}
+      {state.reauthUrl ? (
+        <>
+          {' '}
+          <a href={state.reauthUrl} className="font-semibold underline">
+            Enter your code
+          </a>
+        </>
+      ) : null}
     </p>
   );
 }

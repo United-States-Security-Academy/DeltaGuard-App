@@ -7,16 +7,20 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check:bundle": "node scripts/check-bundle-secrets.mjs"
   },
   "dependencies": {
     "@deltaguard/shared": "workspace:*",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "exceljs": "4.4.0",
+    "fflate": "^0.8.3",
     "leaflet": "1.9.4",
     "next": "16.4.6",
     "pdf-lib": "1.17.1",
+    "pdfjs-dist": "^6.5.438",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "recharts": "^3.11.0",
@@ -33,6 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "^4",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "vitest": "^3.2.7"
   }
 }

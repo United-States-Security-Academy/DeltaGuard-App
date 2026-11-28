@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTimeZone } from '../../../../schedule/data';
 import { setPostOrderArchived } from '../../../post-order-actions';
 import { PostOrderForm } from '../post-order-form';
+import { loadFailed } from '@/lib/server-errors';
 
 type Props = PageProps<'/sites/[id]/post-orders/[orderId]'>;
 
@@ -61,7 +62,7 @@ async function PostOrderContent({ params }: Pick<Props, 'params'>) {
   ]);
 
   if (orderResult.error)
-    return <ErrorText>Could not load this post order: {orderResult.error.message}</ErrorText>;
+    return <ErrorText>{loadFailed('this post order', orderResult.error)}</ErrorText>;
   const order = orderResult.data;
   if (!order) notFound();
 
@@ -182,7 +183,7 @@ async function PostOrderContent({ params }: Pick<Props, 'params'>) {
 
       <Card title={`Version history (${versions.data?.length ?? 0})`}>
         {versions.error ? (
-          <ErrorText>Could not load the history: {versions.error.message}</ErrorText>
+          <ErrorText>{loadFailed('the history', versions.error)}</ErrorText>
         ) : (
           <div className="flex flex-col gap-2">
             {(versions.data ?? []).map((v) => (

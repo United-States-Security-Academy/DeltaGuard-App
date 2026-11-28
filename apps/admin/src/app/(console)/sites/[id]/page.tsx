@@ -13,6 +13,7 @@ import { deleteSite } from '../actions';
 import { assignOfficer, unassignOfficer } from '../assignment-actions';
 import { fallbackMapCenter } from '../data';
 import { SiteForm } from '../site-form';
+import { loadFailed } from '@/lib/server-errors';
 
 type Props = PageProps<'/sites/[id]'>;
 
@@ -62,8 +63,7 @@ async function SiteContent({ params }: Pick<Props, 'params'>) {
       .order('title'),
   ]);
 
-  if (siteResult.error)
-    return <ErrorText>Could not load this site: {siteResult.error.message}</ErrorText>;
+  if (siteResult.error) return <ErrorText>{loadFailed('this site', siteResult.error)}</ErrorText>;
   const site = siteResult.data;
   if (!site) notFound();
 
@@ -183,7 +183,7 @@ async function SiteContent({ params }: Pick<Props, 'params'>) {
         }
       >
         {postOrders.error ? (
-          <ErrorText>Could not load post orders: {postOrders.error.message}</ErrorText>
+          <ErrorText>{loadFailed('post orders', postOrders.error)}</ErrorText>
         ) : orders.length === 0 ? (
           <EmptyState>
             No post orders yet. Officers must acknowledge a site&apos;s post orders before they

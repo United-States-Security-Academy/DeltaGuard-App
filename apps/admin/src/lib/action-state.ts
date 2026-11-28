@@ -5,6 +5,8 @@ export type ActionState = {
   ok: boolean;
   message: string;
   fieldErrors?: Record<string, string>;
+  /** Set when a sensitive action needs the authenticator code first (see lib/auth.ts). */
+  reauthUrl?: string;
 } | null;
 
 /** First error message per field, for showing under inputs. */

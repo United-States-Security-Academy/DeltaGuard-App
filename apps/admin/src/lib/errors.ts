@@ -1,5 +1,5 @@
 import { friendlyError, isSessionError } from '@deltaguard/shared';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { invalidateAccessToken } from './supabase/client';
 
 // Error wording for the console's browser code. Raw database text is logged to
 // the browser console, never shown.
@@ -13,16 +13,16 @@ export function consoleError(error: unknown, action?: string): string {
 }
 
 /**
- * Runs a Supabase request; if it failed because the sign-in had expired (often
- * after the internet dropped, so the token couldn't be renewed and the request
- * went out signed out), renews the session and runs it once more.
+ * Runs a Supabase request; if it failed because the access token had expired
+ * (often after the internet dropped), fetches a fresh token from the server
+ * and runs it once more.
  */
 export async function withSessionRetry<T extends { error: unknown }>(
-  supabase: SupabaseClient,
+  _supabase: unknown,
   run: () => PromiseLike<T>,
 ): Promise<T> {
   const first = await run();
   if (!first.error || !isSessionError(first.error)) return first;
-  const { error } = await supabase.auth.refreshSession();
-  return error ? first : run();
+  invalidateAccessToken();
+  return run();
 }

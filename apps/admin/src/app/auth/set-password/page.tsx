@@ -2,7 +2,8 @@
 
 import { useActionState } from 'react';
 
-import { AuthCard, Button, Field, FormMessage } from '@/components/ui';
+import { PasswordField } from '@/components/password-field';
+import { AuthCard, Button, FormMessage } from '@/components/ui';
 
 import { setPassword } from './actions';
 
@@ -20,19 +21,17 @@ export default function SetPasswordPage() {
   return (
     <AuthCard title="Choose your password">
       <form action={action} className="flex flex-col gap-4">
-        <Field
+        <PasswordField
           label="New password"
           name="password"
-          type="password"
           autoComplete="new-password"
           minLength={10}
           required
           error={state?.fieldErrors?.password}
         />
-        <Field
+        <PasswordField
           label="Confirm password"
           name="confirm"
-          type="password"
           autoComplete="new-password"
           required
           error={state?.fieldErrors?.confirm}

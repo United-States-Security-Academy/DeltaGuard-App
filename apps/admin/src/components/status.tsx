@@ -2,6 +2,10 @@ import {
   describeExpiry,
   type EmploymentStatus,
   expiryStatus,
+  FORM_INBOX_STATUS_LABELS,
+  FORM_TEMPLATE_STATUS_LABELS,
+  type FormInboxStatus,
+  type FormTemplateStatus,
   INCIDENT_SEVERITY_LABELS,
   INCIDENT_STATUS_LABELS,
   type IncidentSeverity,
@@ -75,4 +79,26 @@ export function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
       {INCIDENT_SEVERITY_LABELS[severity]}
     </Badge>
   );
+}
+
+const FORM_TEMPLATE_TONE: Record<FormTemplateStatus, BadgeTone> = {
+  draft: 'warn',
+  published: 'good',
+  archived: 'neutral',
+};
+
+export function FormTemplateStatusBadge({ status }: { status: FormTemplateStatus }) {
+  return <Badge tone={FORM_TEMPLATE_TONE[status]}>{FORM_TEMPLATE_STATUS_LABELS[status]}</Badge>;
+}
+
+const FORM_INBOX_TONE: Record<FormInboxStatus, BadgeTone> = {
+  not_started: 'neutral',
+  draft: 'neutral',
+  submitted: 'warn',
+  returned: 'neutral',
+  approved: 'good',
+};
+
+export function FormSubmissionStatusBadge({ status }: { status: FormInboxStatus }) {
+  return <Badge tone={FORM_INBOX_TONE[status]}>{FORM_INBOX_STATUS_LABELS[status]}</Badge>;
 }

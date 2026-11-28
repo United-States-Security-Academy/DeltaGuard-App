@@ -4,6 +4,7 @@ import {
   INCIDENT_STATUS_LABELS,
   incidentCategoryLabel,
   recordIdSchema,
+  SIGNED_URL_MAX_SECONDS,
 } from '@deltaguard/shared';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -17,11 +18,12 @@ import { createClient } from '@/lib/supabase/server';
 import { getTimeZone } from '../../schedule/data';
 import { formatWhen, loadIncident } from '../data';
 import { ReviewForm } from './review-form';
+import { caughtMessage } from '@/lib/server-errors';
 
 type Props = PageProps<'/incidents/[id]'>;
 
 /** Photos are shown through signed links that expire after this long. */
-const PHOTO_URL_SECONDS = 10 * 60;
+const PHOTO_URL_SECONDS = SIGNED_URL_MAX_SECONDS;
 
 export default function IncidentPage({ params }: Props) {
   return (
@@ -46,7 +48,7 @@ async function IncidentContent({ params }: Pick<Props, 'params'>) {
   try {
     incident = await loadIncident(supabase, id.data.id);
   } catch (e) {
-    return <ErrorText>Could not load this report: {(e as Error).message}</ErrorText>;
+    return <ErrorText>{caughtMessage(e, 'this report')}</ErrorText>;
   }
   if (!incident) notFound();
   const timeZone = await getTimeZone(supabase);

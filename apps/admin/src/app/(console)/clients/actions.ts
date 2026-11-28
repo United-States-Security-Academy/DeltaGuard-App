@@ -4,10 +4,12 @@ import { clientSchema, recordIdSchema } from '@deltaguard/shared';
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireAdmin } from '@/lib/auth';
 import { FOREIGN_KEY_VIOLATION, text } from '@/lib/form-data';
 import { createClient } from '@/lib/supabase/server';
+import { publicMessage } from '@/lib/server-errors';
 
 // Clients: admins write, supervisors read (RLS enforces the same).
 
@@ -28,7 +30,7 @@ export async function addClient(_prev: ActionState, fd: FormData): Promise<Actio
 
   const supabase = await createClient();
   const { data, error } = await supabase.from('clients').insert(parsed.data).select('id').single();
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
 
   redirect(`/clients/${data.id}`);
 }
@@ -46,7 +48,7 @@ export async function updateClient(_prev: ActionState, fd: FormData): Promise<Ac
     .update(parsed.data)
     .eq('id', id.data.id)
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) return { ok: false, message: 'Client not found.' };
 
   refresh();
@@ -66,7 +68,7 @@ export async function deleteClient(_prev: ActionState, fd: FormData): Promise<Ac
       message:
         error.code === FOREIGN_KEY_VIOLATION
           ? 'This client still has sites. Delete or deactivate them first.'
-          : error.message,
+          : publicMessage(error, 'save'),
     };
   }
   redirect('/clients');

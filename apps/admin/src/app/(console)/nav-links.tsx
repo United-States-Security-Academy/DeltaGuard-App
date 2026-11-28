@@ -7,6 +7,7 @@ import {
   CalendarIcon,
   ClientsIcon,
   DashboardIcon,
+  FormsIcon,
   IncidentsIcon,
   LiveIcon,
   MessagesIcon,
@@ -15,7 +16,9 @@ import {
   SitesIcon,
   SosIcon,
   TimesheetsIcon,
+  TrainingIcon,
   UsersIcon,
+  WelfareIcon,
 } from '@/components/icons';
 
 const ICONS = {
@@ -26,10 +29,13 @@ const ICONS = {
   clients: ClientsIcon,
   sites: SitesIcon,
   incidents: IncidentsIcon,
+  forms: FormsIcon,
+  training: TrainingIcon,
   timesheets: TimesheetsIcon,
   users: UsersIcon,
   messages: MessagesIcon,
   sos: SosIcon,
+  welfare: WelfareIcon,
   settings: SettingsIcon,
 } as const;
 

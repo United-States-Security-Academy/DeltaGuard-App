@@ -3,6 +3,7 @@ import 'server-only';
 import { addDaysIso, type IncidentSeverity } from '@deltaguard/shared';
 
 import type { createClient } from '@/lib/supabase/server';
+import { loadError } from '@/lib/server-errors';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -15,7 +16,7 @@ export const TREND_DAYS = 30;
 /** Today's counts and the exceptions waiting for someone (one row). */
 export async function loadSummary(supabase: Supabase) {
   const { data, error } = await supabase.rpc('dashboard_summary').single();
-  if (error) throw new Error(`Could not load the dashboard: ${error.message}`);
+  if (error) throw loadError('the dashboard', error);
   return data;
 }
 export type DashboardSummary = Awaited<ReturnType<typeof loadSummary>>;
@@ -23,7 +24,7 @@ export type DashboardSummary = Awaited<ReturnType<typeof loadSummary>>;
 /** Clock-in outcomes per day, oldest first. */
 export async function loadAttendance(supabase: Supabase) {
   const { data, error } = await supabase.rpc('dashboard_attendance', { p_days: TREND_DAYS });
-  if (error) throw new Error(`Could not load attendance: ${error.message}`);
+  if (error) throw loadError('attendance', error);
   return data;
 }
 export type AttendanceDay = Awaited<ReturnType<typeof loadAttendance>>[number];
@@ -33,7 +34,7 @@ export async function loadIncidentsBySite(supabase: Supabase) {
   const { data, error } = await supabase.rpc('dashboard_incidents_by_site', {
     p_days: TREND_DAYS,
   });
-  if (error) throw new Error(`Could not load incidents by site: ${error.message}`);
+  if (error) throw loadError('incidents by site', error);
   return data;
 }
 export type SiteIncidents = Awaited<ReturnType<typeof loadIncidentsBySite>>[number];
@@ -52,7 +53,7 @@ export async function loadExpiringLicences(supabase: Supabase, today: string, li
     .eq('officer.employment_status', 'active')
     .order('expires_on')
     .limit(limit);
-  if (error) throw new Error(`Could not load licences: ${error.message}`);
+  if (error) throw loadError('licences', error);
   return data;
 }
 export type ExpiringLicence = Awaited<ReturnType<typeof loadExpiringLicences>>[number];
@@ -72,7 +73,7 @@ export async function loadIncidentsToReview(supabase: Supabase) {
     .in('status', ['submitted', 'under_review'])
     .order('submitted_at')
     .limit(50);
-  if (error) throw new Error(`Could not load incidents: ${error.message}`);
+  if (error) throw loadError('incidents', error);
 
   return [...data].sort(
     (a, b) =>

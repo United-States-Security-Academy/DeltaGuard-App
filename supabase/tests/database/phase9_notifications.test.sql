@@ -312,6 +312,9 @@ set local role postgres;
 
 insert into public.user_devices (id, user_id, device_id, platform, push_token) values
   ('00000000-0000-0000-0000-00000009de01', '00000000-0000-0000-0000-0000000009a1', 'phone-a', 'android', 'ExponentPushToken[abc123]');
+-- Phase 20: mark fixture phones verified, so attendance flags here stay
+-- about attendance (device flags have their own tests).
+update public.user_devices set integrity_status = 'verified', integrity_checked_at = now();
 
 select throws_ok(
   $$ update public.user_devices set push_token = 'not-a-token' where id = '00000000-0000-0000-0000-00000009de01' $$,

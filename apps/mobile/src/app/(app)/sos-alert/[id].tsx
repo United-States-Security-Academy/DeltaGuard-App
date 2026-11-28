@@ -11,12 +11,13 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Linking, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Linking, RefreshControl, Text, View } from 'react-native';
 
+import { FormScrollView } from '@/components/keyboard';
 import { Button, Card, ErrorState, Input, Loading, Notice } from '@/components/ui';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
-import { brand } from '@/lib/theme';
+import { brand, fx } from '@/lib/theme';
 
 type Alert = Tables<'sos_alerts'>;
 
@@ -121,8 +122,9 @@ function StaffAlert({ alertId }: { alertId: string }) {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-ink"
+    <FormScrollView
+      className="flex-1"
+      style={fx.screen}
       contentContainerClassName="gap-4 p-5 pb-16"
       keyboardShouldPersistTaps="handled"
       refreshControl={
@@ -219,6 +221,6 @@ function StaffAlert({ alertId }: { alertId: string }) {
           />
         </View>
       )}
-    </ScrollView>
+    </FormScrollView>
   );
 }

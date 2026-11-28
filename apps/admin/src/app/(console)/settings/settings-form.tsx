@@ -11,6 +11,7 @@ type Settings = {
   late_grace_minutes: number;
   early_clock_in_minutes: number;
   low_accuracy_threshold_m: number;
+  integrity_enforcement: string;
 };
 
 type ZoneGroup = { label: string; zones: { value: string; label: string }[] };
@@ -124,6 +125,29 @@ export function SettingsForm({ settings, zones }: { settings: Settings; zones: Z
         <p className="text-sm text-muted">
           A clock-in later than the start time plus the grace period is flagged late. With no
           clock-in by then, the shift is marked missed a few minutes later.
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="font-semibold">Phone security</h2>
+        <p className="max-w-2xl text-sm text-muted">
+          Phones are checked with Apple App Attest / Google Play Integrity, and report rooting,
+          emulators and fake-location apps. Supervisors are always told. Choose what happens to
+          clock-ins, quiz submissions and form signing from a phone that fails.
+        </p>
+        <div className="max-w-md">
+          <Select
+            label="Phones that fail the check"
+            name="integrity_enforcement"
+            defaultValue={settings.integrity_enforcement}
+          >
+            <option value="monitor">Flag their actions (recommended to start)</option>
+            <option value="block">Refuse clock-in, quizzes and form signing</option>
+          </Select>
+        </div>
+        <p className="max-w-2xl text-sm text-muted">
+          A phone whose check couldn&apos;t run (no connection, service not set up) is only ever
+          flagged, never refused.
         </p>
       </section>
 

@@ -24,6 +24,9 @@ import { IncidentsCard } from './_dashboard/incidents-card';
 import { getTimeZone } from './schedule/data';
 import { type BoardRow, compareBoardRows, loadTodayBoard } from './schedule/today/board';
 import { StageBadge } from './schedule/today/stage-badge';
+import { WelfareDashboardCard } from './welfare/dashboard-card';
+import { loadWelfareBoard } from './welfare/data';
+import { caughtMessage } from '@/lib/server-errors';
 
 /** Rows shown on the dashboard; the live board has the rest. */
 const TODAY_ROWS = 6;
@@ -46,16 +49,17 @@ async function Dashboard() {
 
   let data;
   try {
-    const [summary, attendance, bySite, toReview, licences] = await Promise.all([
+    const [summary, attendance, bySite, toReview, licences, welfare] = await Promise.all([
       loadSummary(supabase),
       loadAttendance(supabase),
       loadIncidentsBySite(supabase),
       loadIncidentsToReview(supabase),
       loadExpiringLicences(supabase, board.today),
+      loadWelfareBoard(supabase),
     ]);
-    data = { summary, attendance, bySite, toReview, licences };
+    data = { summary, attendance, bySite, toReview, licences, welfare };
   } catch (e) {
-    return <ErrorText>{(e as Error).message}</ErrorText>;
+    return <ErrorText>{caughtMessage(e)}</ErrorText>;
   }
   const { summary } = data;
 
@@ -63,6 +67,9 @@ async function Dashboard() {
     <div className="grid gap-5 lg:grid-cols-3">
       <div className="lg:col-span-3">
         <TodayCard summary={summary} rows={board.rows} timeZone={timeZone} />
+      </div>
+      <div className="lg:col-span-3">
+        <WelfareDashboardCard rows={data.welfare} timeZone={timeZone} now={new Date().getTime()} />
       </div>
       <NeedsActionCard summary={summary} />
       <LicencesCard summary={summary} upcoming={data.licences} today={board.today} />
@@ -221,6 +228,7 @@ function DashboardSkeleton() {
   return (
     <div className="grid gap-5 lg:grid-cols-3" aria-busy="true" aria-label="Loading dashboard">
       <div className="h-96 animate-pulse panel lg:col-span-3" />
+      <div className="h-64 animate-pulse panel lg:col-span-3" />
       <div className="h-72 animate-pulse panel" />
       <div className="h-72 animate-pulse panel" />
       <div className="h-72 animate-pulse rounded-3xl bg-ink/80 dark:bg-navy" />

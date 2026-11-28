@@ -14,6 +14,162 @@ export type Database = {
   }
   public: {
     Tables: {
+      assessment_attempt_grants: {
+        Row: {
+          assessment_id: string
+          extra_attempts: number
+          granted_at: string
+          granted_by: string | null
+          id: string
+          officer_id: string
+          reason: string | null
+        }
+        Insert: {
+          assessment_id: string
+          extra_attempts?: number
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          officer_id: string
+          reason?: string | null
+        }
+        Update: {
+          assessment_id?: string
+          extra_attempts?: number
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          officer_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_attempt_grants_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_attempt_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_attempt_grants_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_attempts: {
+        Row: {
+          answers: Json | null
+          assessment_id: string
+          attempt_number: number
+          device_integrity: string | null
+          id: string
+          officer_id: string
+          passed: boolean | null
+          score_percent: number | null
+          started_at: string
+          submitted_at: string | null
+          timed_out: boolean
+        }
+        Insert: {
+          answers?: Json | null
+          assessment_id: string
+          attempt_number: number
+          device_integrity?: string | null
+          id?: string
+          officer_id: string
+          passed?: boolean | null
+          score_percent?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          timed_out?: boolean
+        }
+        Update: {
+          answers?: Json | null
+          assessment_id?: string
+          attempt_number?: number
+          device_integrity?: string | null
+          id?: string
+          officer_id?: string
+          passed?: boolean | null
+          score_percent?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          timed_out?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_attempts_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_attempts_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessments: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          max_attempts: number | null
+          pass_mark_percent: number
+          show_correct_answers_after: Database["public"]["Enums"]["show_answers_after"]
+          shuffle_options: boolean
+          shuffle_questions: boolean
+          time_limit_minutes: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          max_attempts?: number | null
+          pass_mark_percent?: number
+          show_correct_answers_after?: Database["public"]["Enums"]["show_answers_after"]
+          shuffle_options?: boolean
+          shuffle_questions?: boolean
+          time_limit_minutes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          max_attempts?: number | null
+          pass_mark_percent?: number
+          show_correct_answers_after?: Database["public"]["Enums"]["show_answers_after"]
+          shuffle_options?: boolean
+          shuffle_questions?: boolean
+          time_limit_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: true
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_events: {
         Row: {
           accepted: boolean
@@ -79,6 +235,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string | null
+          at: string
+          details: Json
+          id: number
+          ip: string | null
+          target_id: string | null
+          target_type: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string | null
+          at?: string
+          details?: Json
+          id?: never
+          ip?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          at?: string
+          details?: Json
+          id?: never
+          ip?: string | null
+          target_id?: string | null
+          target_type?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       clients: {
         Row: {
@@ -321,6 +516,415 @@ export type Database = {
           },
         ]
       }
+      device_heartbeats: {
+        Row: {
+          app_state: string
+          battery_level: number | null
+          device_id: string
+          last_seen_at: string
+          officer_id: string
+          shift_id: string | null
+        }
+        Insert: {
+          app_state?: string
+          battery_level?: number | null
+          device_id: string
+          last_seen_at?: string
+          officer_id: string
+          shift_id?: string | null
+        }
+        Update: {
+          app_state?: string
+          battery_level?: number | null
+          device_id?: string
+          last_seen_at?: string
+          officer_id?: string
+          shift_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_heartbeats_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "device_heartbeats_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_integrity_challenges: {
+        Row: {
+          challenge: string
+          created_at: string
+          device_id: string
+          expires_at: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          challenge: string
+          created_at?: string
+          device_id: string
+          expires_at?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          challenge?: string
+          created_at?: string
+          device_id?: string
+          expires_at?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_integrity_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_assignments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          due_at: string | null
+          id: string
+          officer_id: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          site_id: string | null
+          template_id: string
+          template_version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          id?: string
+          officer_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          site_id?: string | null
+          template_id: string
+          template_version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          id?: string
+          officer_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          site_id?: string | null
+          template_id?: string
+          template_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_assignments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_assignments_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_assignments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_fields: {
+        Row: {
+          acroform_name: string | null
+          created_at: string
+          font_size: number
+          height: number
+          id: string
+          key: string
+          label: string
+          options: Json | null
+          page: number
+          required: boolean
+          sort_order: number
+          template_id: string
+          type: Database["public"]["Enums"]["form_field_type"]
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          acroform_name?: string | null
+          created_at?: string
+          font_size?: number
+          height: number
+          id?: string
+          key: string
+          label: string
+          options?: Json | null
+          page: number
+          required?: boolean
+          sort_order?: number
+          template_id: string
+          type: Database["public"]["Enums"]["form_field_type"]
+          width: number
+          x: number
+          y: number
+        }
+        Update: {
+          acroform_name?: string | null
+          created_at?: string
+          font_size?: number
+          height?: number
+          id?: string
+          key?: string
+          label?: string
+          options?: Json | null
+          page?: number
+          required?: boolean
+          sort_order?: number
+          template_id?: string
+          type?: Database["public"]["Enums"]["form_field_type"]
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_submissions: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          device_id: string | null
+          device_integrity: string | null
+          filled_pdf_path: string | null
+          filled_pdf_sha256: string | null
+          id: string
+          officer_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          signature_path: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["form_submission_status"]
+          submitted_at: string | null
+          template_id: string
+          template_version: number
+          updated_at: string
+          values: Json
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_integrity?: string | null
+          filled_pdf_path?: string | null
+          filled_pdf_sha256?: string | null
+          id?: string
+          officer_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          signature_path?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["form_submission_status"]
+          submitted_at?: string | null
+          template_id: string
+          template_version?: number
+          updated_at?: string
+          values?: Json
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_integrity?: string | null
+          filled_pdf_path?: string | null
+          filled_pdf_sha256?: string | null
+          id?: string
+          officer_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          signature_path?: string | null
+          signed_at?: string | null
+          status?: Database["public"]["Enums"]["form_submission_status"]
+          submitted_at?: string | null
+          template_id?: string
+          template_version?: number
+          updated_at?: string
+          values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "form_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_template_versions: {
+        Row: {
+          description: string | null
+          fields: Json
+          original_pdf_path: string
+          page_count: number
+          page_image_paths: string[]
+          published_at: string
+          published_by: string | null
+          template_id: string
+          title: string
+          version: number
+        }
+        Insert: {
+          description?: string | null
+          fields: Json
+          original_pdf_path: string
+          page_count: number
+          page_image_paths: string[]
+          published_at?: string
+          published_by?: string | null
+          template_id: string
+          title: string
+          version: number
+        }
+        Update: {
+          description?: string | null
+          fields?: Json
+          original_pdf_path?: string
+          page_count?: number
+          page_image_paths?: string[]
+          published_at?: string
+          published_by?: string | null
+          template_id?: string
+          title?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_template_versions_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          edited_at: string
+          id: string
+          original_pdf_path: string | null
+          page_count: number | null
+          page_image_paths: string[]
+          status: Database["public"]["Enums"]["form_template_status"]
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          edited_at?: string
+          id?: string
+          original_pdf_path?: string | null
+          page_count?: number | null
+          page_image_paths?: string[]
+          status?: Database["public"]["Enums"]["form_template_status"]
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          edited_at?: string
+          id?: string
+          original_pdf_path?: string | null
+          page_count?: number | null
+          page_image_paths?: string[]
+          status?: Database["public"]["Enums"]["form_template_status"]
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incident_photos: {
         Row: {
           created_at: string
@@ -484,6 +1088,172 @@ export type Database = {
           },
         ]
       }
+      lesson_assignments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          creates_qualification_type: string | null
+          due_at: string | null
+          id: string
+          lesson_id: string
+          officer_id: string | null
+          qualification_valid_months: number | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          site_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          creates_qualification_type?: string | null
+          due_at?: string | null
+          id?: string
+          lesson_id: string
+          officer_id?: string | null
+          qualification_valid_months?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          site_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          creates_qualification_type?: string | null
+          due_at?: string | null
+          id?: string
+          lesson_id?: string
+          officer_id?: string | null
+          qualification_valid_months?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          site_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_assignments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_assignments_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_assignments_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_assignments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_progress: {
+        Row: {
+          completed_reading_at: string | null
+          lesson_id: string
+          officer_id: string
+          pages_viewed: number[]
+          seconds_spent: number
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          completed_reading_at?: string | null
+          lesson_id: string
+          officer_id: string
+          pages_viewed?: number[]
+          seconds_spent?: number
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_reading_at?: string | null
+          lesson_id?: string
+          officer_id?: string
+          pages_viewed?: number[]
+          seconds_spent?: number
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_progress_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_minutes: number | null
+          id: string
+          page_count: number | null
+          page_image_paths: string[]
+          pdf_path: string | null
+          status: Database["public"]["Enums"]["lesson_status"]
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          page_count?: number | null
+          page_image_paths?: string[]
+          pdf_path?: string | null
+          status?: Database["public"]["Enums"]["lesson_status"]
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          page_count?: number | null
+          page_image_paths?: string[]
+          pdf_path?: string | null
+          status?: Database["public"]["Enums"]["lesson_status"]
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_path: string | null
@@ -618,6 +1388,52 @@ export type Database = {
             foreignKeyName: "officer_details_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      officer_welfare_settings: {
+        Row: {
+          mode: string
+          officer_id: string
+          policy_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          mode: string
+          officer_id: string
+          policy_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          mode?: string
+          officer_id?: string
+          policy_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "officer_welfare_settings_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "officer_welfare_settings_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "welfare_check_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "officer_welfare_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -935,32 +1751,140 @@ export type Database = {
           },
         ]
       }
+      question_options: {
+        Row: {
+          id: string
+          is_correct: boolean
+          question_id: string
+          sort_order: number
+          text: string
+        }
+        Insert: {
+          id?: string
+          is_correct?: boolean
+          question_id: string
+          sort_order?: number
+          text: string
+        }
+        Update: {
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          sort_order?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questions: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          explanation: string | null
+          id: string
+          points: number
+          prompt: string
+          sort_order: number
+          type: Database["public"]["Enums"]["question_type"]
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          points?: number
+          prompt: string
+          sort_order?: number
+          type: Database["public"]["Enums"]["question_type"]
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          points?: number
+          prompt?: string
+          sort_order?: number
+          type?: Database["public"]["Enums"]["question_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_limit_counters: {
+        Row: {
+          action: string
+          hits: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          action: string
+          hits?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          action?: string
+          hits?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           early_clock_in_minutes: number
           id: boolean
+          integrity_enforcement: string
           late_grace_minutes: number
           low_accuracy_threshold_m: number
           time_zone: string
           updated_at: string
+          welfare_policy_id: string | null
         }
         Insert: {
           early_clock_in_minutes?: number
           id?: boolean
+          integrity_enforcement?: string
           late_grace_minutes?: number
           low_accuracy_threshold_m?: number
           time_zone?: string
           updated_at?: string
+          welfare_policy_id?: string | null
         }
         Update: {
           early_clock_in_minutes?: number
           id?: boolean
+          integrity_enforcement?: string
           late_grace_minutes?: number
           low_accuracy_threshold_m?: number
           time_zone?: string
           updated_at?: string
+          welfare_policy_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "settings_welfare_policy_id_fkey"
+            columns: ["welfare_policy_id"]
+            isOneToOne: false
+            referencedRelation: "welfare_check_policies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shifts: {
         Row: {
@@ -1076,6 +2000,8 @@ export type Database = {
           name: string
           site_contacts: Json
           updated_at: string
+          welfare_checks_enabled: boolean
+          welfare_policy_id: string | null
         }
         Insert: {
           active?: boolean
@@ -1090,6 +2016,8 @@ export type Database = {
           name: string
           site_contacts?: Json
           updated_at?: string
+          welfare_checks_enabled?: boolean
+          welfare_policy_id?: string | null
         }
         Update: {
           active?: boolean
@@ -1104,6 +2032,8 @@ export type Database = {
           name?: string
           site_contacts?: Json
           updated_at?: string
+          welfare_checks_enabled?: boolean
+          welfare_policy_id?: string | null
         }
         Relationships: [
           {
@@ -1111,6 +2041,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sites_welfare_policy_id_fkey"
+            columns: ["welfare_policy_id"]
+            isOneToOne: false
+            referencedRelation: "welfare_check_policies"
             referencedColumns: ["id"]
           },
         ]
@@ -1564,10 +2501,53 @@ export type Database = {
           },
         ]
       }
+      upload_checks: {
+        Row: {
+          attempts: number
+          bucket_id: string
+          checked_at: string | null
+          claimed_at: string | null
+          created_at: string
+          name: string
+          owner_id: string | null
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          bucket_id: string
+          checked_at?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          name: string
+          owner_id?: string | null
+          reason?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          bucket_id?: string
+          checked_at?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          name?: string
+          owner_id?: string | null
+          reason?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       user_devices: {
         Row: {
+          attest_counter: number
+          attest_key_id: string | null
+          attest_public_key: Json | null
           device_id: string
           id: string
+          integrity_checked_at: string | null
+          integrity_reasons: string[]
+          integrity_signals: string[]
+          integrity_status: string
           last_seen_at: string
           platform: Database["public"]["Enums"]["device_platform"]
           push_token: string | null
@@ -1576,8 +2556,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attest_counter?: number
+          attest_key_id?: string | null
+          attest_public_key?: Json | null
           device_id: string
           id?: string
+          integrity_checked_at?: string | null
+          integrity_reasons?: string[]
+          integrity_signals?: string[]
+          integrity_status?: string
           last_seen_at?: string
           platform: Database["public"]["Enums"]["device_platform"]
           push_token?: string | null
@@ -1586,8 +2573,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attest_counter?: number
+          attest_key_id?: string | null
+          attest_public_key?: Json | null
           device_id?: string
           id?: string
+          integrity_checked_at?: string | null
+          integrity_reasons?: string[]
+          integrity_signals?: string[]
+          integrity_status?: string
           last_seen_at?: string
           platform?: Database["public"]["Enums"]["device_platform"]
           push_token?: string | null
@@ -1601,6 +2595,349 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welfare_check_policies: {
+        Row: {
+          alarm_seconds: number
+          call_attempts: number
+          call_gap_seconds: number
+          created_at: string
+          enabled: boolean
+          id: string
+          max_interval_minutes: number
+          min_interval_minutes: number
+          name: string
+          night_end: string | null
+          night_max_interval_minutes: number | null
+          night_min_interval_minutes: number | null
+          night_start: string | null
+          response_seconds: number
+          supervisor_alert_after_seconds: number | null
+          updated_at: string
+        }
+        Insert: {
+          alarm_seconds?: number
+          call_attempts?: number
+          call_gap_seconds?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          max_interval_minutes?: number
+          min_interval_minutes?: number
+          name: string
+          night_end?: string | null
+          night_max_interval_minutes?: number | null
+          night_min_interval_minutes?: number | null
+          night_start?: string | null
+          response_seconds?: number
+          supervisor_alert_after_seconds?: number | null
+          updated_at?: string
+        }
+        Update: {
+          alarm_seconds?: number
+          call_attempts?: number
+          call_gap_seconds?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          max_interval_minutes?: number
+          min_interval_minutes?: number
+          name?: string
+          night_end?: string | null
+          night_max_interval_minutes?: number | null
+          night_min_interval_minutes?: number | null
+          night_start?: string | null
+          response_seconds?: number
+          supervisor_alert_after_seconds?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      welfare_checks: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alerted_user_ids: string[]
+          biometric_verified: boolean
+          calls_made: number
+          created_at: string
+          device_id: string | null
+          escalation_log: Json
+          id: string
+          officer_id: string
+          policy: Json
+          policy_id: string | null
+          prompted_at: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          responded_at: string | null
+          responded_at_device: string | null
+          responded_offline: boolean
+          response_flags: string[]
+          response_seconds: number | null
+          scheduled_at: string
+          shift_id: string
+          site_id: string
+          status: Database["public"]["Enums"]["welfare_check_status"]
+          step_due_at: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alerted_user_ids?: string[]
+          biometric_verified?: boolean
+          calls_made?: number
+          created_at?: string
+          device_id?: string | null
+          escalation_log?: Json
+          id?: string
+          officer_id: string
+          policy: Json
+          policy_id?: string | null
+          prompted_at?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          responded_at?: string | null
+          responded_at_device?: string | null
+          responded_offline?: boolean
+          response_flags?: string[]
+          response_seconds?: number | null
+          scheduled_at: string
+          shift_id: string
+          site_id: string
+          status?: Database["public"]["Enums"]["welfare_check_status"]
+          step_due_at?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alerted_user_ids?: string[]
+          biometric_verified?: boolean
+          calls_made?: number
+          created_at?: string
+          device_id?: string | null
+          escalation_log?: Json
+          id?: string
+          officer_id?: string
+          policy?: Json
+          policy_id?: string | null
+          prompted_at?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          responded_at?: string | null
+          responded_at_device?: string | null
+          responded_offline?: boolean
+          response_flags?: string[]
+          response_seconds?: number | null
+          scheduled_at?: string
+          shift_id?: string
+          site_id?: string
+          status?: Database["public"]["Enums"]["welfare_check_status"]
+          step_due_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welfare_checks_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_checks_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_checks_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "welfare_check_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_checks_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_checks_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_checks_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welfare_outbox: {
+        Row: {
+          attempt_no: number
+          attempts: number
+          body: string
+          check_id: string
+          claimed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          next_attempt_at: string
+          phone: string
+          provider_id: string | null
+          recipient_id: string | null
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempt_no?: number
+          attempts?: number
+          body: string
+          check_id: string
+          claimed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind: string
+          next_attempt_at?: string
+          phone: string
+          provider_id?: string | null
+          recipient_id?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempt_no?: number
+          attempts?: number
+          body?: string
+          check_id?: string
+          claimed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          next_attempt_at?: string
+          phone?: string
+          provider_id?: string | null
+          recipient_id?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welfare_outbox_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "welfare_checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_outbox_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      welfare_pauses: {
+        Row: {
+          id: string
+          officer_id: string
+          paused_at: string
+          paused_by: string | null
+          paused_by_name: string | null
+          reason: string
+          resume_at: string | null
+          resume_reason: string | null
+          resumed_at: string | null
+          resumed_by: string | null
+          resumed_by_name: string | null
+          shift_id: string
+          site_id: string
+        }
+        Insert: {
+          id?: string
+          officer_id: string
+          paused_at?: string
+          paused_by?: string | null
+          paused_by_name?: string | null
+          reason: string
+          resume_at?: string | null
+          resume_reason?: string | null
+          resumed_at?: string | null
+          resumed_by?: string | null
+          resumed_by_name?: string | null
+          shift_id: string
+          site_id: string
+        }
+        Update: {
+          id?: string
+          officer_id?: string
+          paused_at?: string
+          paused_by?: string | null
+          paused_by_name?: string | null
+          reason?: string
+          resume_at?: string | null
+          resume_reason?: string | null
+          resumed_at?: string | null
+          resumed_by?: string | null
+          resumed_by_name?: string | null
+          shift_id?: string
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "welfare_pauses_officer_id_fkey"
+            columns: ["officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_pauses_paused_by_fkey"
+            columns: ["paused_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_pauses_resumed_by_fkey"
+            columns: ["resumed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_pauses_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "welfare_pauses_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
             referencedColumns: ["id"]
           },
         ]
@@ -1683,6 +3020,43 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      acknowledge_welfare_check: {
+        Args: { p_check_id: string; p_notes?: string }
+        Returns: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alerted_user_ids: string[]
+          biometric_verified: boolean
+          calls_made: number
+          created_at: string
+          device_id: string | null
+          escalation_log: Json
+          id: string
+          officer_id: string
+          policy: Json
+          policy_id: string | null
+          prompted_at: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          responded_at: string | null
+          responded_at_device: string | null
+          responded_offline: boolean
+          response_flags: string[]
+          response_seconds: number | null
+          scheduled_at: string
+          shift_id: string
+          site_id: string
+          status: Database["public"]["Enums"]["welfare_check_status"]
+          step_due_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welfare_checks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       active_admin_ids: { Args: never; Returns: string[] }
       active_supervisor_ids: { Args: { p_except?: string }; Returns: string[] }
       add_conversation_members: {
@@ -1701,11 +3075,73 @@ export type Database = {
         Args: { p_entry_ids: string[] }
         Returns: number
       }
+      assessment_answers_visible: {
+        Args: {
+          p_assessment: Database["public"]["Tables"]["assessments"]["Row"]
+          p_officer: string
+        }
+        Returns: boolean
+      }
+      assessment_gate: {
+        Args: { p_assessment_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          lesson_id: string
+          max_attempts: number | null
+          pass_mark_percent: number
+          show_correct_answers_after: Database["public"]["Enums"]["show_answers_after"]
+          shuffle_options: boolean
+          shuffle_questions: boolean
+          time_limit_minutes: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "assessments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assessment_overview: { Args: { p_assessment_id: string }; Returns: Json }
+      attempt_review: {
+        Args: {
+          p_attempt: Database["public"]["Tables"]["assessment_attempts"]["Row"]
+        }
+        Returns: Json
+      }
+      audit: {
+        Args: {
+          p_action: string
+          p_actor?: string
+          p_details?: Json
+          p_target_id?: string
+          p_target_type?: string
+        }
+        Returns: undefined
+      }
       auth_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      call_edge_function: {
+        Args: { p_body: Json; p_function: string }
+        Returns: undefined
+      }
+      can_manage_welfare_check: {
+        Args: { p_check_id: string }
+        Returns: boolean
+      }
+      can_read_form_template_file: {
+        Args: { p_name: string }
+        Returns: boolean
+      }
+      can_read_lesson_file: { Args: { p_name: string }; Returns: boolean }
       can_see_sos: { Args: { p_alert_id: string }; Returns: boolean }
+      can_upload_form_submission_file: {
+        Args: { p_name: string }
+        Returns: boolean
+      }
       chat_contacts: {
         Args: never
         Returns: {
@@ -1763,6 +3199,53 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_upload_checks: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          bucket_id: string
+          checked_at: string | null
+          claimed_at: string | null
+          created_at: string
+          name: string
+          owner_id: string | null
+          reason: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "upload_checks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_welfare_outbox: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempt_no: number
+          attempts: number
+          body: string
+          check_id: string
+          claimed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          next_attempt_at: string
+          phone: string
+          provider_id: string | null
+          recipient_id: string | null
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "welfare_outbox"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       clock_event: {
         Args: {
           p_accuracy_m: number
@@ -1795,6 +3278,44 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "attendance_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_form_submission: {
+        Args: {
+          p_expected_signature_path: string
+          p_expected_values: Json
+          p_id: string
+          p_pdf_path: string
+          p_sha256: string
+          p_signed_at: string
+          p_template_version: number
+        }
+        Returns: {
+          assignment_id: string | null
+          created_at: string
+          device_id: string | null
+          device_integrity: string | null
+          filled_pdf_path: string | null
+          filled_pdf_sha256: string | null
+          id: string
+          officer_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          signature_path: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["form_submission_status"]
+          submitted_at: string | null
+          template_id: string
+          template_version: number
+          updated_at: string
+          values: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "form_submissions"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1884,11 +3405,31 @@ export type Database = {
           timesheets_pending_period_id: string
         }[]
       }
+      device_integrity_for: { Args: { p_user_id: string }; Returns: string }
+      device_integrity_gate: {
+        Args: { p_action: string; p_user_id: string }
+        Returns: string
+      }
       distance_m: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
       e164_or_null: { Args: { p_phone: string }; Returns: string }
+      effective_max_attempts: {
+        Args: {
+          p_assessment: Database["public"]["Tables"]["assessments"]["Row"]
+          p_officer: string
+        }
+        Returns: number
+      }
+      enforce_rate_limit: { Args: { p_action: string }; Returns: undefined }
+      expire_open_attempt: {
+        Args: {
+          p_assessment: Database["public"]["Tables"]["assessments"]["Row"]
+          p_officer: string
+        }
+        Returns: undefined
+      }
       finish_sos_sms: {
         Args: {
           p_error?: string
@@ -1898,9 +3439,82 @@ export type Database = {
         }
         Returns: undefined
       }
+      finish_upload_check: {
+        Args: {
+          p_bucket: string
+          p_name: string
+          p_reason?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      finish_welfare_outbox: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_provider_id?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      form_assignment_applies_to_me: {
+        Args: { p_assignment_id: string }
+        Returns: boolean
+      }
+      form_inbox: {
+        Args: {
+          p_limit?: number
+          p_now?: string
+          p_officer_id?: string
+          p_overdue?: boolean
+          p_site_id?: string
+          p_status?: string
+          p_template_id?: string
+        }
+        Returns: {
+          assignment_id: string
+          due_at: string
+          has_pdf: boolean
+          officer_id: string
+          officer_name: string
+          overdue: boolean
+          reviewed_at: string
+          row_key: string
+          status: string
+          submission_id: string
+          submitted_at: string
+          template_id: string
+          template_title: string
+          template_version: number
+        }[]
+      }
+      form_template_visible_to_me: {
+        Args: { p_template_id: string }
+        Returns: boolean
+      }
       format_shift_time: {
         Args: { p_ends_at: string; p_starts_at: string }
         Returns: string
+      }
+      get_assessment_for_officer: {
+        Args: { p_assessment_id: string }
+        Returns: Json
+      }
+      get_attempt_review: { Args: { p_attempt_id: string }; Returns: Json }
+      get_next_welfare_check: {
+        Args: never
+        Returns: {
+          id: string
+          scheduled_at: string
+        }[]
+      }
+      grant_extra_attempt: {
+        Args: {
+          p_assessment_id: string
+          p_officer_id: string
+          p_reason?: string
+        }
+        Returns: number
       }
       is_active_user: { Args: never; Returns: boolean }
       is_conversation_folder_member: {
@@ -1914,6 +3528,46 @@ export type Database = {
       is_locked_date: { Args: { p_date: string }; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
       is_valid_time_zone: { Args: { p_name: string }; Returns: boolean }
+      lesson_assigned_to: {
+        Args: { p_lesson_id: string; p_user: string }
+        Returns: boolean
+      }
+      lesson_assignment_applies_to_me: {
+        Args: { p_assignment_id: string }
+        Returns: boolean
+      }
+      lesson_question_stats: {
+        Args: { p_lesson_id: string }
+        Returns: {
+          attempts: number
+          correct: number
+          prompt: string
+          question_id: string
+          sort_order: number
+          type: Database["public"]["Enums"]["question_type"]
+          wrong_percent: number
+        }[]
+      }
+      lesson_results: {
+        Args: { p_lesson_id: string; p_now?: string }
+        Returns: {
+          attempts: number
+          attempts_allowed: number
+          best_score: number
+          completed_reading_at: string
+          due_at: string
+          last_attempt_id: string
+          officer_id: string
+          officer_name: string
+          overdue: boolean
+          page_count: number
+          pages_viewed: number
+          passed_at: string
+          seconds_spent: number
+          status: string
+        }[]
+      }
+      lesson_visible_to_me: { Args: { p_lesson_id: string }; Returns: boolean }
       list_conversations: {
         Args: never
         Returns: {
@@ -1950,12 +3604,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_target_id?: string
+          p_target_type?: string
+        }
+        Returns: undefined
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
       }
       mark_missed_shifts: { Args: never; Returns: number }
       notify_expiring_licences: { Args: never; Returns: number }
+      notify_lessons_due_soon: { Args: { p_now?: string }; Returns: number }
       notify_upcoming_shifts: { Args: never; Returns: number }
       notify_users: {
         Args: {
@@ -1968,10 +3632,35 @@ export type Database = {
         }
         Returns: number
       }
+      pause_welfare_checks: {
+        Args: { p_reason: string; p_resume_at?: string; p_shift_id: string }
+        Returns: {
+          id: string
+          officer_id: string
+          paused_at: string
+          paused_by: string | null
+          paused_by_name: string | null
+          reason: string
+          resume_at: string | null
+          resume_reason: string | null
+          resumed_at: string | null
+          resumed_by: string | null
+          resumed_by_name: string | null
+          shift_id: string
+          site_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welfare_pauses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       post_orders_pending: {
         Args: { p_at?: string; p_officer_id: string; p_site_id: string }
         Returns: number
       }
+      publish_form_template: { Args: { p_id: string }; Returns: number }
       queue_sos_sms: {
         Args: { p_alert_id: string; p_body: string; p_targets: Json }
         Returns: number
@@ -2017,15 +3706,70 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      rate_limit_hit: {
+        Args: {
+          p_action: string
+          p_max: number
+          p_user: string
+          p_window_seconds: number
+        }
+        Returns: undefined
+      }
+      record_device_heartbeat: {
+        Args: {
+          p_app_state?: string
+          p_battery_level?: number
+          p_device_id: string
+        }
+        Returns: boolean
+      }
+      record_device_integrity: {
+        Args: {
+          p_device_id: string
+          p_reasons: string[]
+          p_signals: string[]
+          p_status: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      record_lesson_progress: {
+        Args: { p_lesson_id: string; p_pages: number[]; p_seconds?: number }
+        Returns: {
+          completed_reading_at: string | null
+          lesson_id: string
+          officer_id: string
+          pages_viewed: number[]
+          seconds_spent: number
+          started_at: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lesson_progress"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       remove_conversation_member: {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: undefined
+      }
+      reorder_questions: {
+        Args: { p_assessment_id: string; p_ids: string[] }
+        Returns: undefined
+      }
+      replace_form_fields: {
+        Args: { p_fields: Json; p_template_id: string }
+        Returns: number
       }
       request_push_delivery: {
         Args: { p_notification_ids?: string[] }
         Returns: undefined
       }
       request_sos_sms: { Args: never; Returns: undefined }
+      request_upload_sweep: { Args: never; Returns: undefined }
+      request_welfare_delivery: { Args: never; Returns: undefined }
       resolve_sos: {
         Args: {
           p_alert_id: string
@@ -2065,6 +3809,111 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      resolve_welfare_check: {
+        Args: { p_check_id: string; p_notes: string }
+        Returns: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alerted_user_ids: string[]
+          biometric_verified: boolean
+          calls_made: number
+          created_at: string
+          device_id: string | null
+          escalation_log: Json
+          id: string
+          officer_id: string
+          policy: Json
+          policy_id: string | null
+          prompted_at: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          responded_at: string | null
+          responded_at_device: string | null
+          responded_offline: boolean
+          response_flags: string[]
+          response_seconds: number | null
+          scheduled_at: string
+          shift_id: string
+          site_id: string
+          status: Database["public"]["Enums"]["welfare_check_status"]
+          step_due_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welfare_checks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      respond_welfare_check: {
+        Args: {
+          p_biometric_verified: boolean
+          p_check_id: string
+          p_device_id?: string
+          p_offline: boolean
+          p_responded_at_device: string
+        }
+        Returns: Json
+      }
+      resume_welfare_checks: {
+        Args: { p_shift_id: string }
+        Returns: {
+          id: string
+          officer_id: string
+          paused_at: string
+          paused_by: string | null
+          paused_by_name: string | null
+          reason: string
+          resume_at: string | null
+          resume_reason: string | null
+          resumed_at: string | null
+          resumed_by: string | null
+          resumed_by_name: string | null
+          shift_id: string
+          site_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welfare_pauses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      review_form_submission: {
+        Args: {
+          p_id: string
+          p_notes?: string
+          p_status: Database["public"]["Enums"]["form_submission_status"]
+        }
+        Returns: {
+          assignment_id: string | null
+          created_at: string
+          device_id: string | null
+          device_integrity: string | null
+          filled_pdf_path: string | null
+          filled_pdf_sha256: string | null
+          id: string
+          officer_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          signature_path: string | null
+          signed_at: string | null
+          status: Database["public"]["Enums"]["form_submission_status"]
+          submitted_at: string | null
+          template_id: string
+          template_version: number
+          updated_at: string
+          values: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "form_submissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       review_incident: {
         Args: {
           p_incident_id: string
@@ -2096,6 +3945,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      save_attest_key: {
+        Args: {
+          p_counter: number
+          p_device_id: string
+          p_key_id: string
+          p_public_key: Json
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      save_questions: {
+        Args: { p_assessment_id: string; p_questions: Json }
+        Returns: string[]
       }
       shift_handover: {
         Args: { p_shift_id: string }
@@ -2184,6 +4047,11 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
+      storage_upload_allowed: { Args: { p_bucket: string }; Returns: boolean }
+      submit_attempt: {
+        Args: { p_answers: Json; p_assessment_id: string }
+        Returns: Json
+      }
       submit_incident: {
         Args: {
           p_category: string
@@ -2223,6 +4091,241 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      supervises_form_submission: {
+        Args: { p_assignment_id: string; p_officer_id: string }
+        Returns: boolean
+      }
+      supervises_form_submission_file: {
+        Args: { p_name: string }
+        Returns: boolean
+      }
+      supervises_officer: { Args: { p_officer_id: string }; Returns: boolean }
+      supervises_site: { Args: { p_site_id: string }; Returns: boolean }
+      upload_is_clean: {
+        Args: { p_bucket: string; p_name: string }
+        Returns: boolean
+      }
+      welfare_board: {
+        Args: never
+        Returns: {
+          answered_count: number
+          app_state: string
+          battery_level: number
+          checks_enabled: boolean
+          ends_at: string
+          heartbeat_at: string
+          last_check_id: string
+          last_responded_at: string
+          last_response_flags: string[]
+          last_response_seconds: number
+          last_scheduled_at: string
+          last_status: Database["public"]["Enums"]["welfare_check_status"]
+          missed_count: number
+          officer_id: string
+          officer_name: string
+          officer_phone: string
+          open_acknowledged_at: string
+          open_check_id: string
+          open_prompted_at: string
+          open_scheduled_at: string
+          open_status: Database["public"]["Enums"]["welfare_check_status"]
+          pause_id: string
+          pause_reason: string
+          pause_resume_at: string
+          paused_at: string
+          paused_by_name: string
+          policy_id: string
+          policy_name: string
+          policy_source: string
+          shift_id: string
+          site_id: string
+          site_name: string
+          starts_at: string
+        }[]
+      }
+      welfare_check_rows: {
+        Args: {
+          p_from: string
+          p_night_end?: string
+          p_night_start?: string
+          p_officer_id?: string
+          p_period?: string
+          p_shift_id?: string
+          p_site_id?: string
+          p_to: string
+        }
+        Returns: {
+          acknowledged_at: string
+          answered: boolean
+          calls_made: number
+          check_id: string
+          due_at: string
+          escalated: boolean
+          is_night: boolean
+          local_date: string
+          local_time: string
+          missed: boolean
+          officer_id: string
+          officer_name: string
+          policy_name: string
+          prompted_at: string
+          resolution_notes: string
+          resolved_at: string
+          resolved_by_name: string
+          responded_at: string
+          response_flags: string[]
+          response_seconds: number
+          shift_id: string
+          site_id: string
+          site_name: string
+          status: Database["public"]["Enums"]["welfare_check_status"]
+        }[]
+      }
+      welfare_end_pause: {
+        Args: {
+          p_at: string
+          p_by: string
+          p_pause_id: string
+          p_reason: string
+        }
+        Returns: {
+          id: string
+          officer_id: string
+          paused_at: string
+          paused_by: string | null
+          paused_by_name: string | null
+          reason: string
+          resume_at: string | null
+          resume_reason: string | null
+          resumed_at: string | null
+          resumed_by: string | null
+          resumed_by_name: string | null
+          shift_id: string
+          site_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welfare_pauses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      welfare_escalate: {
+        Args: {
+          p_check: Database["public"]["Tables"]["welfare_checks"]["Row"]
+          p_now: string
+          p_reason: string
+        }
+        Returns: number
+      }
+      welfare_interval_minutes: {
+        Args: { p_at: string; p_policy_id: string }
+        Returns: number[]
+      }
+      welfare_is_night: {
+        Args: {
+          p_at: string
+          p_policy: Database["public"]["Tables"]["welfare_check_policies"]["Row"]
+        }
+        Returns: boolean
+      }
+      welfare_local_time: { Args: { p_at: string }; Returns: string }
+      welfare_log: {
+        Args: {
+          p_at: string
+          p_check_id: string
+          p_data?: Json
+          p_step: string
+        }
+        Returns: undefined
+      }
+      welfare_policy_for: {
+        Args: { p_officer_id: string; p_site_id: string }
+        Returns: {
+          alarm_seconds: number
+          call_attempts: number
+          call_gap_seconds: number
+          created_at: string
+          enabled: boolean
+          id: string
+          max_interval_minutes: number
+          min_interval_minutes: number
+          name: string
+          night_end: string | null
+          night_max_interval_minutes: number | null
+          night_min_interval_minutes: number | null
+          night_start: string | null
+          response_seconds: number
+          supervisor_alert_after_seconds: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welfare_check_policies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      welfare_policy_for_site: {
+        Args: { p_site_id: string }
+        Returns: {
+          alarm_seconds: number
+          call_attempts: number
+          call_gap_seconds: number
+          created_at: string
+          enabled: boolean
+          id: string
+          max_interval_minutes: number
+          min_interval_minutes: number
+          name: string
+          night_end: string | null
+          night_max_interval_minutes: number | null
+          night_min_interval_minutes: number | null
+          night_start: string | null
+          response_seconds: number
+          supervisor_alert_after_seconds: number | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welfare_check_policies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      welfare_report: {
+        Args: {
+          p_from: string
+          p_group?: string
+          p_night_end?: string
+          p_night_start?: string
+          p_officer_id?: string
+          p_period?: string
+          p_site_id?: string
+          p_to: string
+        }
+        Returns: {
+          answered: number
+          answered_late: number
+          avg_response_seconds: number
+          escalated: number
+          group_id: string
+          group_name: string
+          max_response_seconds: number
+          missed: number
+          prompted: number
+        }[]
+      }
+      welfare_resume_due_pauses: { Args: never; Returns: number }
+      welfare_run_escalation: {
+        Args: { p_now?: string; p_request_delivery?: boolean }
+        Returns: number
+      }
+      welfare_schedule_next: {
+        Args: { p_from: string; p_shift_id: string }
+        Returns: string
+      }
+      welfare_shift_paused: { Args: { p_shift_id: string }; Returns: boolean }
     }
     Enums: {
       attendance_type: "clock_in" | "clock_out"
@@ -2235,9 +4338,21 @@ export type Database = {
         | "other"
       device_platform: "ios" | "android"
       employment_status: "active" | "suspended" | "terminated"
+      form_field_type:
+        | "text"
+        | "multiline"
+        | "number"
+        | "date"
+        | "checkbox"
+        | "select"
+        | "signature"
+      form_submission_status: "draft" | "submitted" | "returned" | "approved"
+      form_template_status: "draft" | "published" | "archived"
       incident_severity: "low" | "medium" | "high" | "critical"
       incident_status: "submitted" | "under_review" | "approved" | "returned"
+      lesson_status: "draft" | "published" | "archived"
       pay_period_status: "open" | "locked"
+      question_type: "single_choice" | "multiple_choice" | "true_false"
       shift_status:
         | "scheduled"
         | "acknowledged"
@@ -2245,9 +4360,19 @@ export type Database = {
         | "completed"
         | "missed"
         | "cancelled"
+      show_answers_after: "never" | "after_pass" | "after_final_attempt"
       sos_status: "active" | "acknowledged" | "resolved" | "false_alarm"
       timesheet_status: "pending" | "approved"
       user_role: "admin" | "supervisor" | "officer"
+      welfare_check_status:
+        | "scheduled"
+        | "prompted"
+        | "responded"
+        | "alarm"
+        | "calling"
+        | "escalated"
+        | "resolved"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2380,9 +4505,22 @@ export const Constants = {
       dar_entry_type: ["patrol", "observation", "visitor", "handover", "other"],
       device_platform: ["ios", "android"],
       employment_status: ["active", "suspended", "terminated"],
+      form_field_type: [
+        "text",
+        "multiline",
+        "number",
+        "date",
+        "checkbox",
+        "select",
+        "signature",
+      ],
+      form_submission_status: ["draft", "submitted", "returned", "approved"],
+      form_template_status: ["draft", "published", "archived"],
       incident_severity: ["low", "medium", "high", "critical"],
       incident_status: ["submitted", "under_review", "approved", "returned"],
+      lesson_status: ["draft", "published", "archived"],
       pay_period_status: ["open", "locked"],
+      question_type: ["single_choice", "multiple_choice", "true_false"],
       shift_status: [
         "scheduled",
         "acknowledged",
@@ -2391,9 +4529,20 @@ export const Constants = {
         "missed",
         "cancelled",
       ],
+      show_answers_after: ["never", "after_pass", "after_final_attempt"],
       sos_status: ["active", "acknowledged", "resolved", "false_alarm"],
       timesheet_status: ["pending", "approved"],
       user_role: ["admin", "supervisor", "officer"],
+      welfare_check_status: [
+        "scheduled",
+        "prompted",
+        "responded",
+        "alarm",
+        "calling",
+        "escalated",
+        "resolved",
+        "cancelled",
+      ],
     },
   },
 } as const

@@ -10,6 +10,7 @@ import {
 } from '@deltaguard/shared';
 
 import type { createClient } from '@/lib/supabase/server';
+import { loadError } from '@/lib/server-errors';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -60,7 +61,7 @@ export async function findOverlaps(
     .gt('ends_at', from);
   if (excludeShiftId) query = query.neq('id', excludeShiftId);
   const { data, error } = await query;
-  if (error) throw new Error(`Could not check for overlapping shifts: ${error.message}`);
+  if (error) throw loadError('for overlapping shifts', error);
 
   const warnings: OverlapWarning[] = [];
   for (const o of occurrences) {
@@ -119,7 +120,7 @@ export async function findLicenceWarnings(
     .from('qualifications')
     .select('user_id, type, expires_on')
     .eq('user_id', officerId);
-  if (error) throw new Error(`Could not check licences: ${error.message}`);
+  if (error) throw loadError('licences', error);
 
   return latestExpiries(data).flatMap(({ type, expiresOn }) =>
     expiresOn !== null && expiresOn < last
@@ -150,7 +151,7 @@ export async function licenceExpiries(
     .from('qualifications')
     .select('user_id, type, expires_on')
     .in('user_id', officerIds);
-  if (error) throw new Error(`Could not load licences: ${error.message}`);
+  if (error) throw loadError('licences', error);
 
   for (const q of latestExpiries(data)) {
     if (q.expiresOn === null) continue;
@@ -180,7 +181,7 @@ export async function loadFormOptions(supabase: Supabase) {
     supabase.from('site_assignments').select('site_id, officer_id'),
   ]);
   for (const { error } of [sites, officers, assignments]) {
-    if (error) throw new Error(`Could not load sites and officers: ${error.message}`);
+    if (error) throw loadError('sites and officers', error);
   }
   if (!sites.data || !officers.data || !assignments.data)
     throw new Error('Could not load sites and officers');

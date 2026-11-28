@@ -16,7 +16,7 @@ select set_config(
   true
 );
 
-select plan(47);
+select plan(50);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures (as postgres)
@@ -36,6 +36,9 @@ insert into public.user_devices (user_id, device_id, platform) values
   ('00000000-0000-0000-0000-0000000003a1', 'phone-a', 'ios'),
   ('00000000-0000-0000-0000-0000000003a2', 'phone-b', 'android'),
   ('00000000-0000-0000-0000-0000000003d1', 'phone-d', 'android');
+-- Phase 20: mark fixture phones verified, so attendance flags here stay
+-- about attendance (device flags have their own tests).
+update public.user_devices set integrity_status = 'verified', integrity_checked_at = now();
 
 insert into public.clients (id, name) values ('00000000-0000-0000-0000-00000003c001', 'P3 Client');
 
@@ -214,17 +217,40 @@ select throws_ok(
   'officer cannot clock in twice'
 );
 
--- Early, 1 km away, mock location and poor accuracy.
+-- Clock-in only on site (phase 14): refused 1 km away, refused with a vague
+-- fix (the accuracy allowance is capped at 50 m), refused with mock location.
+select throws_ok(
+  $$ select public.clock_event('00000000-0000-0000-0000-000000005a02', 'clock_in', 6.509, 3.4, 10, false, 'phone-a') $$,
+  'DG002',
+  null,
+  'officer cannot clock in 1 km from the site'
+);
+
+select throws_ok(
+  $$ select public.clock_event('00000000-0000-0000-0000-000000005a02', 'clock_in', 6.503, 3.4, 500, false, 'phone-a') $$,
+  'DG002',
+  null,
+  'a 500 m accuracy does not stretch the radius by more than 50 m'
+);
+
+select throws_ok(
+  $$ select public.clock_event('00000000-0000-0000-0000-000000005a02', 'clock_in', 6.5, 3.4, 10, true, 'phone-a') $$,
+  'DG002',
+  null,
+  'officer cannot clock in with a mock location, even at the site'
+);
+
+-- Early, about 167 m away (radius 150) but accurate to 30 m: allowed, flagged.
 select is(
-  (public.clock_event('00000000-0000-0000-0000-000000005a02', 'clock_in', 6.509, 3.4, 500, true, 'phone-a')).flags,
-  array['out_of_range', 'mock_location', 'low_accuracy']::text[],
-  'far away, mock location and 500 m accuracy are all flagged (early is not late)'
+  (public.clock_event('00000000-0000-0000-0000-000000005a02', 'clock_in', 6.5015, 3.4, 30, false, 'phone-a')).flags,
+  array['out_of_range']::text[],
+  'just outside the radius but within the fix accuracy is accepted and flagged (early is not late)'
 );
 
 select ok(
-  (select distance_from_site_m between 990 and 1010 from public.attendance_events
+  (select distance_from_site_m between 160 and 175 from public.attendance_events
     where shift_id = '00000000-0000-0000-0000-000000005a02' and type = 'clock_in' and accepted),
-  'distance for a clock-in 1 km away is about 1000 m'
+  'distance for that clock-in is about 167 m'
 );
 
 select throws_ok(

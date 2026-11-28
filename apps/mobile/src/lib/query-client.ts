@@ -9,6 +9,7 @@ import {
 import * as Network from 'expo-network';
 import { AppState } from 'react-native';
 
+import { isOfflineState } from './network';
 import { supabase } from './supabase';
 
 /**
@@ -47,13 +48,12 @@ export const queryClient = new QueryClient({
   },
 });
 
-// Tell React Query when the phone is offline: loads wait (keeping what's on
-// screen) instead of failing, and everything refreshes when it's back.
-// isInternetReachable can be undefined while the OS is still checking, so only
-// an explicit false counts as offline.
+// Tell React Query when the phone has no connection: loads wait (keeping what's
+// on screen) instead of failing, and everything refreshes when it's back. Only
+// "no connection at all" counts (see network.ts).
 onlineManager.setEventListener((setOnline) => {
   const subscription = Network.addNetworkStateListener((state) => {
-    setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+    setOnline(!isOfflineState(state));
   });
   return () => subscription.remove();
 });

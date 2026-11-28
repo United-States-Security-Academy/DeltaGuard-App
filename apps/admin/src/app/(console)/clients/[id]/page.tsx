@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/server';
 
 import { deleteClient } from '../actions';
 import { ClientForm } from '../client-form';
+import { loadFailed } from '@/lib/server-errors';
 
 type Props = PageProps<'/clients/[id]'>;
 
@@ -37,7 +38,7 @@ async function ClientContent({ params }: Pick<Props, 'params'>) {
     .select('*, sites(id, name, address, active)')
     .eq('id', id.data.id)
     .maybeSingle();
-  if (error) return <ErrorText>Could not load this client: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('this client', error)}</ErrorText>;
   if (!client) notFound();
 
   const isAdmin = staff.role === 'admin';

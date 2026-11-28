@@ -1,6 +1,8 @@
 import {
   type AttendanceType,
+  distanceMeters,
   HANDOVER_NOTE_MAX,
+  isWithinClockInRange,
   POST_ORDERS_REQUIRED_CODE,
   toZoned,
 } from '@deltaguard/shared';
@@ -8,8 +10,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -18,24 +20,27 @@ import {
   View,
 } from 'react-native';
 
+import { KeyboardAvoidingView } from '@/components/keyboard';
 import { PostOrdersGate } from '@/components/post-orders';
-import { Button, Card, Notice } from '@/components/ui';
+import { Button, Card, IconRing, Notice } from '@/components/ui';
 import { clockActionFor, type SubmitOutcome, useClock } from '@/lib/clock';
 import {
   type ClockMessage,
   describeEvent,
   describeQueued,
   describeRefusedQueued,
+  formatDistance,
 } from '@/lib/clock-messages';
 import {
   checkLocationPermission,
+  type Fix,
   getClockFix,
   openAppSettings,
   requestLocationPermission,
 } from '@/lib/location';
 import { checkPostOrders, isAcknowledged, postOrderKeys } from '@/lib/post-orders';
 import type { CompanySettings, MyShift } from '@/lib/shifts';
-import { brand } from '@/lib/theme';
+import { brand, fx } from '@/lib/theme';
 
 /** Re-render every 30 s so the button appears / changes as shift times pass. */
 export function useNow(intervalMs = 30_000): number {
@@ -134,7 +139,7 @@ export function ClockPanel({
     if (permission === 'ask') return setStep({ kind: 'explain', type });
     setStep({
       kind: 'problem',
-      message: `Location access is turned off for Deltacon Guard, so you can’t ${NOUN[type]}. In Settings, allow location “While using the app”${
+      message: `Location access is turned off for DeltaGuard, so you can’t ${NOUN[type]}. In Settings, allow location “While using the app”${
         Platform.OS === 'ios' ? ' and turn on Precise Location' : ''
       }, then come back and try again.`,
       settings: true,
@@ -146,7 +151,7 @@ export function ClockPanel({
     if ((await requestLocationPermission()) === 'granted') return locate(type);
     setStep({
       kind: 'problem',
-      message: `Without location access you can’t ${NOUN[type]}: it’s how Deltacon Guard confirms you’re at ${siteName}. If you change your mind, allow it in Settings.`,
+      message: `Without location access you can’t ${NOUN[type]}: it’s how DeltaGuard confirms you’re at ${siteName}. If you change your mind, allow it in Settings.`,
       settings: true,
     });
   }
@@ -159,7 +164,7 @@ export function ClockPanel({
         services_off:
           'Location services are turned off on this phone. Turn them on (in Settings or the quick settings panel) and try again.',
         permission:
-          'Location access is turned off for Deltacon Guard. Allow it in Settings and try again.',
+          'Location access is turned off for DeltaGuard. Allow it in Settings and try again.',
         timeout:
           'Couldn’t get a GPS fix. Move outdoors or near a window, wait a few seconds, and try again.',
         unavailable:
@@ -167,6 +172,14 @@ export function ClockPanel({
       }[result.reason];
       setStep({ kind: 'problem', message, settings: result.reason !== 'timeout' });
       return;
+    }
+
+    // Clock-in only on site. The server checks the same rule (DG002); checking
+    // here too means an officer who is off site (even offline) is told at once
+    // instead of having a clock-in queued that will be refused.
+    if (type === 'clock_in') {
+      const offSite = offSiteReason(result.fix);
+      if (offSite) return setStep({ kind: 'problem', message: offSite });
     }
 
     setStep({ kind: 'sending', type });
@@ -184,7 +197,7 @@ export function ClockPanel({
     const message = toMessage(outcome, type);
     if (result.fix.reducedAccuracy && outcome.kind !== 'error') {
       message.lines.push(
-        'Precise Location is off for Deltacon Guard, so your position was approximate. Turn it on in Settings › Deltacon Guard › Location.',
+        'Precise Location is off for DeltaGuard, so your position was approximate. Turn it on in Settings › DeltaGuard › Location.',
       );
     }
     if (handoverNote && outcome.kind !== 'error') {
@@ -196,6 +209,17 @@ export function ClockPanel({
       editNote('');
     }
     setStep({ kind: 'done', message });
+  }
+
+  function offSiteReason(fix: Fix): string | null {
+    if (fix.isMock) {
+      return 'Fake GPS is on for this phone. Turn off any mock location app, then try again.';
+    }
+    const site = shift.site;
+    if (!site || site.latitude === null || site.longitude === null) return null;
+    const distance = distanceMeters(fix, { latitude: site.latitude, longitude: site.longitude });
+    if (isWithinClockInRange(distance, site.radiusM, fix.accuracyM)) return null;
+    return `You’re ${formatDistance(distance)} from ${siteName}. You can clock in only at the site (within ${formatDistance(site.radiusM)}). Go to the site and try again.`;
   }
 
   function toMessage(outcome: SubmitOutcome, type: AttendanceType): ClockMessage {
@@ -250,14 +274,9 @@ export function ClockPanel({
       ) : null}
 
       {action || busyType ? (
-        <View className="gap-2">
-          <Button
-            title={LABEL[busyType ?? action!]}
-            variant={(busyType ?? action) === 'clock_out' ? 'secondary' : 'primary'}
-            loading={busy}
-            onPress={() => void start(action!)}
-          />
-          <Text className="text-center text-xs leading-4 text-white/50">
+        <View className="items-center gap-3 py-2">
+          <ClockDial type={busyType ?? action!} busy={busy} onPress={() => void start(action!)} />
+          <Text className="px-4 text-center text-xs leading-4 text-white/50">
             {step.kind === 'checking'
               ? 'Checking the post orders for this site…'
               : step.kind === 'locating'
@@ -301,6 +320,60 @@ export function ClockPanel({
   );
 }
 
+const DIAL = 156;
+
+/**
+ * The big round clock button. Clock in: dark glass dial with a gold power
+ * icon. Clock out (on duty): the dial is lit gold, so the state reads at a
+ * glance.
+ */
+function ClockDial({
+  type,
+  busy,
+  onPress,
+}: {
+  type: AttendanceType;
+  busy: boolean;
+  onPress: () => void;
+}) {
+  const onDuty = type === 'clock_out';
+  return (
+    <View className="items-center gap-3">
+      <View
+        className="items-center justify-center rounded-full border border-dashed border-gold/35"
+        style={{ width: DIAL + 36, height: DIAL + 36 }}
+      >
+        <Pressable
+          onPress={onPress}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={LABEL[type]}
+          accessibilityState={{ busy }}
+          className="items-center justify-center rounded-full border-[3px] border-gold active:opacity-85"
+          style={[
+            { width: DIAL, height: DIAL },
+            onDuty
+              ? fx.gold
+              : {
+                  ...fx.glass,
+                  boxShadow: '0px 0px 34px rgba(214,181,98,0.35), 0px 12px 30px rgba(0,0,0,0.5)',
+                },
+          ]}
+        >
+          {busy ? (
+            <ActivityIndicator size="large" color={onDuty ? brand.ink : brand.gold} />
+          ) : (
+            <Ionicons name="power" size={58} color={onDuty ? brand.ink : brand.gold} />
+          )}
+        </Pressable>
+      </View>
+      <Text className="text-lg font-extrabold uppercase tracking-[3px] text-white">
+        {LABEL[type]}
+      </Text>
+    </View>
+  );
+}
+
 /** Asked at clock-out: a note the next officer at the site will see. */
 function HandoverNote({
   visible,
@@ -320,15 +393,10 @@ function HandoverNote({
   const hasNote = value.trim() !== '';
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1 justify-center bg-black/70 px-6"
-      >
-        <View className="gap-4 rounded-2xl border border-gold/30 bg-navy p-5">
+      <KeyboardAvoidingView className="flex-1 justify-center bg-black/70 px-6">
+        <View className="gap-4 rounded-[28px] border border-gold/30 p-6" style={fx.glassGlow}>
           <View className="flex-row items-start gap-3">
-            <View className="h-12 w-12 items-center justify-center rounded-xl bg-gold/15">
-              <Ionicons name="swap-horizontal" size={24} color={brand.gold} />
-            </View>
+            <IconRing name="swap-horizontal" size={52} />
             <Pressable
               onPress={onCancel}
               accessibilityRole="button"
@@ -355,7 +423,7 @@ function HandoverNote({
             keyboardAppearance="dark"
             accessibilityLabel="Handover note"
             textAlignVertical="top"
-            className="min-h-28 rounded-2xl border border-white/10 bg-ink px-4 py-3 text-base text-white"
+            className="min-h-28 rounded-3xl border-2 border-gold/15 bg-ink px-5 py-4 text-base text-white"
           />
           <Button
             title={hasNote ? 'Save note and clock out' : 'Clock out without a note'}
@@ -385,16 +453,14 @@ function ExplainLocation({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View className="flex-1 justify-center bg-black/70 px-6">
-        <View className="gap-4 rounded-2xl border border-gold/30 bg-navy p-5">
-          <View className="h-12 w-12 items-center justify-center rounded-xl bg-gold/15">
-            <Ionicons name="location" size={24} color={brand.gold} />
-          </View>
+        <View className="gap-4 rounded-[28px] border border-gold/30 p-6" style={fx.glassGlow}>
+          <IconRing name="location" size={52} />
           <Text className="text-xl font-bold text-white">
             Your location is needed to {NOUN[type]}
           </Text>
           <View className="gap-2">
             <Text className="text-base leading-6 text-white/80">
-              To confirm you&apos;re at {siteName}, Deltacon Guard checks your phone&apos;s location
+              To confirm you&apos;re at {siteName}, DeltaGuard checks your phone&apos;s location
               once, at the moment you {NOUN[type]}.
             </Text>
             <Text className="text-base leading-6 text-white/80">

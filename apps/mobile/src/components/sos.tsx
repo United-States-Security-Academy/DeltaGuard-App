@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSos } from '@/lib/sos';
-import { brand } from '@/lib/theme';
+import { brand, TAB_BAR_HEIGHT } from '@/lib/theme';
 
 const RED = '#DC2626';
 
@@ -84,7 +84,7 @@ export function SosButton() {
   return (
     <View
       pointerEvents="box-none"
-      style={{ position: 'absolute', right: 16, bottom: insets.bottom + 64 }}
+      style={{ position: 'absolute', right: 16, bottom: insets.bottom + TAB_BAR_HEIGHT + 12 }}
       className="items-center"
     >
       {holding ? (
@@ -110,11 +110,8 @@ export function SosButton() {
             borderWidth: 3,
             borderColor: active ? '#FFFFFF' : brand.gold,
             overflow: 'hidden',
-            elevation: 8,
-            shadowColor: '#000',
-            shadowOpacity: 0.4,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 3 },
+            // Red glow so it reads as the emergency control on the dark UI.
+            boxShadow: '0px 0px 22px rgba(220,38,38,0.55), 0px 6px 14px rgba(0,0,0,0.45)',
           }}
           className="items-center justify-center"
         >
@@ -251,7 +248,7 @@ export function SosScreen() {
 
   const locationText =
     location === 'denied'
-      ? 'Location is off for Deltacon Guard. Tell them where you are.'
+      ? 'Location is off for DeltaGuard. Tell them where you are.'
       : location === 'unavailable' && !lastFix
         ? 'Couldn’t get your location. Tell them where you are.'
         : lastFix

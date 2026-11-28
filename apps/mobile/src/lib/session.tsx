@@ -16,6 +16,7 @@ import { queryClient } from './query-client';
 import { authenticateOwner, type UnlockResult } from './biometric';
 import { registerForPush, unregisterPush, watchPushToken } from './push';
 import { supabase } from './supabase';
+import { wipeLocalData } from './wipe';
 
 /** Lock again after this long in the background. */
 const LOCK_AFTER_MS = 5 * 60 * 1000;
@@ -65,7 +66,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // Stop pushes to this phone while the session can still update its row
     // (if the device was reset, the database has already cleared the token).
     const current = stateRef.current;
+    const userId =
+      current.status === 'ready'
+        ? current.profile.id
+        : current.status === 'unreachable'
+          ? current.userId
+          : null;
     if (current.status === 'ready') await unregisterPush(current.profile.id);
+    // Drafts, queues, photos, cached files, notifications, the encryption key
+    // (lib/wipe.ts): nothing of this user stays on the phone.
+    if (userId) await wipeLocalData(userId);
     // 'local' ends this phone's session only (not the officer's other sessions).
     await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
     // Forget everything fetched for this user (details, licences, sites).
@@ -116,6 +126,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     // callback: it can deadlock the auth client.
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT' && stateRef.current.status === 'ready') {
+        // The refresh token stopped working (suspended, terminated, or signed
+        // out elsewhere): wipe this user's data too. Outside the callback,
+        // which mustn't wait on other work.
+        const userId = stateRef.current.profile.id;
+        setTimeout(() => void wipeLocalData(userId), 0);
         setLocked(false);
         setState({ status: 'signedOut', notice: 'You have been signed out. Sign in again.' });
       }

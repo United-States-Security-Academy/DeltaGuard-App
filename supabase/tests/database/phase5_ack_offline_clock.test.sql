@@ -15,7 +15,7 @@ select set_config(
   true
 );
 
-select plan(27);
+select plan(28);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures (as postgres)
@@ -32,6 +32,9 @@ insert into auth.users (id, email, raw_app_meta_data) values
 insert into public.user_devices (user_id, device_id, platform) values
   ('00000000-0000-0000-0000-0000000005e1', 'phone-e', 'android'),
   ('00000000-0000-0000-0000-0000000005a1', 'phone-g', 'android');
+-- Phase 20: mark fixture phones verified, so attendance flags here stay
+-- about attendance (device flags have their own tests).
+update public.user_devices set integrity_status = 'verified', integrity_checked_at = now();
 
 insert into public.clients (id, name) values ('00000000-0000-0000-0000-00000005c001', 'P5 Client');
 
@@ -256,10 +259,17 @@ select is(
   '...and is not accepted'
 );
 
+select throws_ok(
+  $$ select public.clock_event('00000000-0000-0000-0000-00000005e003', 'clock_in', 6.509, 3.4, 10, false, 'phone-e', now() - interval '39 hours', true) $$,
+  'DG002',
+  null,
+  'a queued clock-in taken 1 km from the site is refused'
+);
+
 select is(
-  (public.clock_event('00000000-0000-0000-0000-00000005e003', 'clock_in', 6.509, 3.4, 10, false, 'phone-e', now() - interval '39 hours', true)).flags,
-  array['delayed', 'late', 'out_of_range']::text[],
-  'a queued clock-in is judged late and out of range by the phone''s time and fix'
+  (public.clock_event('00000000-0000-0000-0000-00000005e003', 'clock_in', 6.5, 3.4, 10, false, 'phone-e', now() - interval '39 hours', true)).flags,
+  array['delayed', 'late']::text[],
+  'a queued clock-in is judged late by the phone''s time'
 );
 
 -- Old 8-argument calls still work (p_queued defaults to false).

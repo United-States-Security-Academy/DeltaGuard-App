@@ -1,4 +1,4 @@
-export const APP_NAME = 'Deltacon Guard';
+export const APP_NAME = 'DeltaGuard';
 export const COMPANY_NAME = 'Deltacon Security';
 
 // Keep in sync with the Postgres enums in supabase/migrations.
@@ -9,13 +9,7 @@ export const DEVICE_PLATFORMS = ['ios', 'android'] as const;
 // Private storage bucket for license scans. Object path: <user_id>/<file>.
 export const LICENSES_BUCKET = 'licenses';
 export const LICENSE_FILE_MAX_BYTES = 10 * 1024 * 1024;
-export const LICENSE_FILE_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/heic',
-  'image/webp',
-  'application/pdf',
-] as const;
+export const LICENSE_FILE_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'] as const;
 
 export const DEFAULT_CLOCK_IN_RADIUS_M = 150;
 
@@ -23,8 +17,6 @@ export const DEFAULT_CLOCK_IN_RADIUS_M = 150;
 export const LICENSE_FILE_EXTENSIONS: Record<(typeof LICENSE_FILE_MIME_TYPES)[number], string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
-  'image/heic': 'heic',
-  'image/webp': 'webp',
   'application/pdf': 'pdf',
 };
 
@@ -48,6 +40,10 @@ export const ATTENDANCE_FLAGS = [
   'wrong_device',
   'delayed',
   'post_orders_unread',
+  // Phase 20: the phone failed its integrity check (or reports root / emulator / fake GPS).
+  'device_failed',
+  // Phase 20 (no longer set since 20d; kept so older rows still have a label).
+  'device_unverified',
 ] as const;
 export type AttendanceFlag = (typeof ATTENDANCE_FLAGS)[number];
 
@@ -66,6 +62,8 @@ export const ATTENDANCE_FLAG_LABELS: Record<(typeof ATTENDANCE_FLAGS)[number], s
   wrong_device: 'Unregistered phone',
   delayed: 'Sent late (offline)',
   post_orders_unread: 'Post orders not acknowledged',
+  device_failed: 'Phone failed the security check',
+  device_unverified: 'Phone not verified',
 };
 
 // Phase 6: post orders and daily activity reports.
@@ -75,6 +73,12 @@ export const ATTENDANCE_FLAG_LABELS: Record<(typeof ATTENDANCE_FLAGS)[number], s
  * officer hasn't acknowledged the site's latest post orders.
  */
 export const POST_ORDERS_REQUIRED_CODE = 'DG001';
+
+/**
+ * SQLSTATE clock_event() raises when a clock-in is refused because the officer
+ * isn't at the site (outside the radius, or a mock location). Phase 14.
+ */
+export const NOT_ON_SITE_CODE = 'DG002';
 
 /** Keep in sync with the Postgres enum dar_entry_type. */
 export const DAR_ENTRY_TYPES = ['patrol', 'observation', 'visitor', 'handover', 'other'] as const;
@@ -222,3 +226,12 @@ export const SOS_EVENT_LABELS: Record<string, string> = {
 export function mapLink(latitude: number | string, longitude: number | string): string {
   return `https://maps.google.com/?q=${latitude},${longitude}`;
 }
+
+/**
+ * Longest life of a signed Storage URL anywhere in the apps (security rule:
+ * 5 minutes). Caches that keep a URL must refresh it before this (see
+ * SIGNED_URL_CACHE_MS).
+ */
+export const SIGNED_URL_MAX_SECONDS = 5 * 60;
+/** How long a screen may reuse a signed URL before asking for a new one. */
+export const SIGNED_URL_CACHE_MS = 4 * 60_000;

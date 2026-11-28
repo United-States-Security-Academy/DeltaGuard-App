@@ -65,6 +65,10 @@ insert into storage.objects (bucket_id, name) values
   ('licenses', '00000000-0000-0000-0000-0000000002a2/lic-b.pdf'),
   ('licenses', '00000000-0000-0000-0000-0000000002d1/lic-d.pdf');
 
+-- Fixture files count as already content-checked (phase 19: unchecked files
+-- are readable only by their uploader).
+update public.upload_checks set status = 'clean' where status = 'pending';
+
 create function pg_temp.login_as(uid uuid) returns void language sql as $$
   select set_config(
     'request.jwt.claims',

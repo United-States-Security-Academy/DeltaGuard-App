@@ -22,6 +22,7 @@ import { deletePayPeriod, lockPayPeriod } from './actions';
 import { attention, type Entry, loadEntries, loadPeriods, pickPeriod, zoned } from './data';
 import { type GridRow, TimesheetGrid } from './grid';
 import { NewPeriodForm } from './new-period-form';
+import { caughtMessage } from '@/lib/server-errors';
 
 const filtersSchema = z.object({
   period: z.preprocess(firstParam, z.uuid().optional()).catch(undefined),
@@ -58,7 +59,7 @@ async function TimesheetsContent({
   try {
     periods = await loadPeriods(supabase);
   } catch (e) {
-    return <ErrorText>Could not load pay periods: {(e as Error).message}</ErrorText>;
+    return <ErrorText>{caughtMessage(e, 'pay periods')}</ErrorText>;
   }
   const period = pickPeriod(periods, f.period, timeZone);
 
@@ -78,7 +79,7 @@ async function TimesheetsContent({
   try {
     entries = await loadEntries(supabase, period);
   } catch (e) {
-    return <ErrorText>Could not load the timesheet: {(e as Error).message}</ErrorText>;
+    return <ErrorText>{caughtMessage(e, 'the timesheet')}</ErrorText>;
   }
   const locked = period.status === 'locked';
   const ended = period.ends_on < todayInZone(timeZone);

@@ -12,6 +12,7 @@ allowBuilds:
   supabase: true # downloads the Supabase CLI binary
   sharp: false
   unrs-resolver: false
+  esbuild: false # via vitest (admin tests); its binary comes from @esbuild/<platform>
 
 minimumReleaseAgeExclude:
   - '@expo/cli@58.1.18 || 58.1.21'

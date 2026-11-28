@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 
 import { addSosContact, deleteSosContact, toggleSosContact } from './actions';
 import { ContactForm } from './contact-form';
+import { loadFailed } from '@/lib/server-errors';
 
 export default function SosContactsPage() {
   return (
@@ -48,8 +49,7 @@ async function Contacts() {
           .order('full_name')
       : Promise.resolve({ data: [], error: null }),
   ]);
-  if (contacts.error)
-    return <ErrorText>Could not load contacts: {contacts.error.message}</ErrorText>;
+  if (contacts.error) return <ErrorText>{loadFailed('contacts', contacts.error)}</ErrorText>;
 
   return (
     <>

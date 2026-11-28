@@ -3,6 +3,7 @@ import 'server-only';
 import { formatDate, toZoned } from '@deltaguard/shared';
 
 import type { createClient } from '@/lib/supabase/server';
+import { loadError } from '@/lib/server-errors';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -28,8 +29,8 @@ export async function loadIncident(supabase: Supabase, id: string) {
       .eq('incident_id', id)
       .order('changed_at'),
   ]);
-  if (incident.error) throw new Error(incident.error.message);
-  if (history.error) throw new Error(history.error.message);
+  if (incident.error) throw loadError('data', incident.error);
+  if (history.error) throw loadError('data', history.error);
   return incident.data ? { ...incident.data, history: history.data } : null;
 }
 

@@ -14,6 +14,7 @@ import { EmploymentBadge, ExpiryBadge } from '@/components/status';
 import { Button, EmptyState, ErrorText, Select, Table } from '@/components/ui';
 import { requireStaff } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+import { loadFailed } from '@/lib/server-errors';
 
 export default function OfficersPage({ searchParams }: PageProps<'/officers'>) {
   return (
@@ -45,7 +46,7 @@ async function OfficersContent({
     .eq('role', 'officer')
     .order('full_name', { ascending: true, nullsFirst: false });
 
-  if (error) return <ErrorText>Could not load officers: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('officers', error)}</ErrorText>;
 
   const today = todayIso();
   const officers = data
