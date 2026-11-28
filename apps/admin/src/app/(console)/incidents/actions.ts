@@ -3,6 +3,7 @@
 import { reviewIncidentSchema } from '@deltaguard/shared';
 import { refresh } from 'next/cache';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireStaff } from '@/lib/auth';
 import { text } from '@/lib/form-data';
@@ -32,7 +33,7 @@ export async function reviewIncident(_prev: ActionState, fd: FormData): Promise<
     p_status: parsed.data.status,
     p_notes: parsed.data.notes,
   });
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
 
   refresh();
   return { ok: true, message: DONE[parsed.data.status] ?? 'Saved.' };

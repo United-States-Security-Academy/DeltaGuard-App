@@ -4,6 +4,8 @@ import {
   chatAttachmentPath,
   type Database,
   sendMessageSchema,
+  SIGNED_URL_CACHE_MS,
+  SIGNED_URL_MAX_SECONDS,
 } from '@deltaguard/shared';
 import {
   type InfiniteData,
@@ -401,11 +403,12 @@ export function useAttachmentUrl(path: string | null) {
   return useQuery({
     queryKey: chatKeys.attachment(path ?? ''),
     enabled: Boolean(path),
-    staleTime: 50 * 60_000,
+    staleTime: SIGNED_URL_CACHE_MS,
+    gcTime: SIGNED_URL_CACHE_MS,
     queryFn: async () => {
       const { data, error } = await supabase.storage
         .from(CHAT_ATTACHMENTS_BUCKET)
-        .createSignedUrl(path!, 60 * 60);
+        .createSignedUrl(path!, SIGNED_URL_MAX_SECONDS);
       if (error) throw error;
       return data.signedUrl;
     },

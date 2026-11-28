@@ -7,6 +7,7 @@ import { requireStaff } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 import { MessagesApp } from './messages-app';
+import { loadFailed } from '@/lib/server-errors';
 
 const paramsSchema = z.object({
   c: z.preprocess(firstParam, z.uuid().optional()).catch(undefined),
@@ -31,7 +32,7 @@ async function Messages({
   // Sites, for "group per site". Everything else loads in the browser with the
   // staff member's own session (RLS: members only) and stays live via Realtime.
   const sites = await supabase.from('sites').select('id, name').order('name');
-  if (sites.error) return <ErrorText>Could not load sites: {sites.error.message}</ErrorText>;
+  if (sites.error) return <ErrorText>{loadFailed('sites', sites.error)}</ErrorText>;
 
   return <MessagesApp userId={staff.userId} sites={sites.data} initialConversationId={c ?? null} />;
 }

@@ -6,6 +6,7 @@ import { requireStaff } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 import { ClientForm } from './client-form';
+import { loadFailed } from '@/lib/server-errors';
 
 export default function ClientsPage() {
   return (
@@ -25,7 +26,7 @@ async function ClientsContent() {
     .from('clients')
     .select('id, name, contact_person, phone, email, sites(count)')
     .order('name');
-  if (error) return <ErrorText>Could not load clients: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('clients', error)}</ErrorText>;
 
   return (
     <>

@@ -29,7 +29,18 @@ const SESSION_PATTERN =
   /jwt expired|invalid jwt|jwt.*malformed|auth session missing|refresh token|not authenticated|invalid claim/i;
 
 /** SQLSTATEs our own functions raise with a message written for people. */
-const APP_CODES = new Set(['P0001', 'P0002', '22023', 'DG001']);
+const APP_CODES = new Set([
+  'P0001',
+  'P0002',
+  '22023',
+  'DG001',
+  'DG002',
+  'DG010',
+  'DG011',
+  'DG012',
+  'DG020', // phone failed the integrity check, block mode (phase 20)
+  'DG429', // rate limited (phase 18)
+]);
 
 function fields(error: unknown): ErrorLike {
   return typeof error === 'object' && error !== null ? (error as ErrorLike) : {};

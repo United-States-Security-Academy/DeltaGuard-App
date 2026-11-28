@@ -3,6 +3,7 @@
 import { settingsSchema } from '@deltaguard/shared';
 import { refresh } from 'next/cache';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireAdmin } from '@/lib/auth';
 import { num, text } from '@/lib/form-data';
@@ -19,6 +20,7 @@ export async function updateSettings(_prev: ActionState, fd: FormData): Promise<
     late_grace_minutes: num(fd, 'late_grace_minutes'),
     early_clock_in_minutes: num(fd, 'early_clock_in_minutes'),
     low_accuracy_threshold_m: num(fd, 'low_accuracy_threshold_m'),
+    integrity_enforcement: text(fd, 'integrity_enforcement') ?? 'monitor',
   });
   if (!parsed.success) return invalid(parsed.error);
 
@@ -28,7 +30,7 @@ export async function updateSettings(_prev: ActionState, fd: FormData): Promise<
     .update(parsed.data)
     .eq('id', true)
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) return { ok: false, message: 'Settings could not be saved.' };
 
   refresh();

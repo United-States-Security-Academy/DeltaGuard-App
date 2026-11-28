@@ -4,10 +4,12 @@ import { recordIdSchema, siteCreateSchema, siteDetailsSchema } from '@deltaguard
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireAdmin, requireStaff } from '@/lib/auth';
 import { checked, FOREIGN_KEY_VIOLATION, json, num, text } from '@/lib/form-data';
 import { createClient } from '@/lib/supabase/server';
+import { publicMessage } from '@/lib/server-errors';
 
 // Sites: admins create, delete and move sites between clients; admins and
 // supervisors edit a site's details (RLS + a guard trigger enforce the same).
@@ -50,7 +52,7 @@ export async function createSite(_prev: ActionState, fd: FormData): Promise<Acti
 
   const supabase = await createClient();
   const { data, error } = await supabase.from('sites').insert(parsed.data).select('id').single();
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
 
   redirect(`/sites/${data.id}`);
 }
@@ -82,7 +84,7 @@ export async function updateSite(_prev: ActionState, fd: FormData): Promise<Acti
     .update({ ...parsed.data, ...(clientId ? { client_id: clientId } : {}) })
     .eq('id', id.data.id)
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) return { ok: false, message: 'Site not found.' };
 
   refresh();
@@ -102,7 +104,7 @@ export async function deleteSite(_prev: ActionState, fd: FormData): Promise<Acti
       message:
         error.code === FOREIGN_KEY_VIOLATION
           ? 'This site has shifts on record, so it can’t be deleted. Untick “Active” instead.'
-          : error.message,
+          : publicMessage(error, 'save'),
     };
   }
 

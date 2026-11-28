@@ -4,6 +4,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
 import { type LocalPhoto, reportDir } from './incident-store';
+import { writeEncryptedBytes } from './vault';
 
 // Taking or choosing incident photos, and preparing them for upload.
 //
@@ -33,7 +34,7 @@ export async function takePhoto(): Promise<PickResult> {
   if (!permission.granted) {
     return {
       kind: 'denied',
-      message: 'Camera access is off for Deltacon Guard. Allow it in Settings to take photos.',
+      message: 'Camera access is off for DeltaGuard. Allow it in Settings to take photos.',
     };
   }
   const result = await ImagePicker.launchCameraAsync(PICKER_OPTIONS);
@@ -70,9 +71,15 @@ export async function preparePhoto(
   const id = Crypto.randomUUID();
   const dir = reportDir(userId, incidentId);
   dir.create({ intermediates: true, idempotent: true });
-  const target = new File(dir, `${id}.jpg`);
-  // saveAsync writes to the cache folder, which the OS may clear: move it.
-  await new File(saved.uri).move(target);
+  // Kept encrypted with the report (lib/vault.ts); the plain copy that
+  // saveAsync wrote to the cache folder is deleted at once.
+  const target = new File(dir, `${id}.jpg.enc`);
+  const plain = new File(saved.uri);
+  try {
+    await writeEncryptedBytes(target, userId, await plain.bytes());
+  } finally {
+    if (plain.exists) plain.delete();
+  }
   return { id, localUri: target.uri, uploaded: false };
 }
 

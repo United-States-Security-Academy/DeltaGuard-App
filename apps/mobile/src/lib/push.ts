@@ -2,13 +2,14 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { AndroidImportance, AndroidNotificationVisibility } from 'expo-notifications';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { MESSAGE_NOTIFICATION_TYPE } from '@deltaguard/shared';
 
 import { getOrCreateDeviceId } from './device';
 import { getOpenConversation } from './messaging';
 import { brand } from './theme';
+import { WELFARE_PROMPT_TYPES } from './welfare-alerts';
 import { supabase } from './supabase';
 
 // Expo push notifications.
@@ -23,14 +24,18 @@ import { supabase } from './supabase';
 
 // Show alerts that arrive while the app is open, like ones that arrive in the
 // background, except a chat message for the conversation already on screen
-// (it appears in the chat itself).
+// (it appears in the chat itself) and welfare prompts (the app shows its own).
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = (notification.request.content.data ?? {}) as Record<string, unknown>;
     const onScreen =
-      data.type === MESSAGE_NOTIFICATION_TYPE &&
-      typeof data.conversation_id === 'string' &&
-      data.conversation_id === getOpenConversation();
+      (data.type === MESSAGE_NOTIFICATION_TYPE &&
+        typeof data.conversation_id === 'string' &&
+        data.conversation_id === getOpenConversation()) ||
+      // Welfare prompts: the open app shows its own full-screen prompt and alarm.
+      (typeof data.type === 'string' &&
+        WELFARE_PROMPT_TYPES.has(data.type) &&
+        AppState.currentState === 'active');
     return {
       shouldShowBanner: !onScreen,
       shouldShowList: !onScreen,

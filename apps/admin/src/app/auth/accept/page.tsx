@@ -37,17 +37,17 @@ async function AcceptInvite({ searchParams }: Pick<PageProps<'/auth/accept'>, 's
   const browserLink = `/auth/confirm?${query}`;
 
   return (
-    <AuthCard title="Welcome to Deltacon Guard">
+    <AuthCard title="Welcome to DeltaGuard">
       <div className="flex flex-col gap-4 text-sm">
         <p>Choose where to set your password.</p>
         <a
           href={appLink}
           className="rounded-lg bg-slate-900 px-3 py-3 text-center font-medium text-white dark:bg-white dark:text-slate-900"
         >
-          Officers: open the Deltacon Guard app
+          Officers: open the DeltaGuard app
         </a>
         <p className="text-slate-500">
-          Open this page on your phone with the Deltacon Guard app installed.
+          Open this page on your phone with the DeltaGuard app installed.
         </p>
         <a
           href={browserLink}

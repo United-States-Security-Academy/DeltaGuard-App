@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 import { formatWhen } from '../incidents/data';
 import { getTimeZone } from '../schedule/data';
 import { SOS_TONE } from './tone';
+import { loadFailed } from '@/lib/server-errors';
 
 export default function SosListPage() {
   return (
@@ -43,7 +44,7 @@ async function SosList() {
     )
     .order('created_at', { ascending: false })
     .limit(200);
-  if (error) return <ErrorText>Could not load SOS alerts: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('SOS alerts', error)}</ErrorText>;
   if (data.length === 0) return <EmptyState>No SOS alerts yet.</EmptyState>;
 
   return (

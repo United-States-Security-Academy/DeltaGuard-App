@@ -8,10 +8,13 @@ import {
 } from '@deltaguard/shared';
 import { refresh } from 'next/cache';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
-import { requireAdmin } from '@/lib/auth';
+import { recordAudit } from '@/lib/audit';
+import { reauthRequired, requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { logFailure, publicMessage } from '@/lib/server-errors';
 
 // Every action re-checks that the caller is an admin with MFA (requireAdmin):
 // server actions are public HTTP endpoints, so the page being admin-only is
@@ -34,13 +37,32 @@ export async function inviteUser(_prev: ActionState, formData: FormData): Promis
   if (!parsed.success) return invalid(parsed.error);
   const { full_name, email, phone, role } = parsed.data;
 
+  // Rate limit (30 an hour per admin) with the admin's own session, before
+  // anything is sent.
+  const supabase = await createClient();
+  const limit = await supabase.rpc('enforce_rate_limit', { p_action: 'invite' });
+  if (limit.error) {
+    return {
+      ok: false,
+      message:
+        limit.error.code === 'DG429'
+          ? 'Too many invites in the last hour. Try again later.'
+          : 'You are not allowed to invite users.',
+    };
+  }
+
   const admin = createAdminClient();
-  // The invite email links to /auth/confirm (see the email template in CLAUDE.md).
+  // Supabase Auth hands the email to the send-email Edge Function (Send Email
+  // hook, Resend), which links to /auth/accept on this console.
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name },
   });
   if (error || !data.user) {
-    return { ok: false, message: error?.message ?? 'The invite could not be sent.' };
+    if (error?.code === 'email_exists' || error?.status === 422) {
+      return { ok: false, message: 'Someone with this email already has an account.' };
+    }
+    logFailure('invite user', error);
+    return { ok: false, message: 'The invite could not be sent. Try again.' };
   }
 
   // The on_auth_user_created trigger already made a profile (role 'officer').
@@ -56,8 +78,10 @@ export async function inviteUser(_prev: ActionState, formData: FormData): Promis
   if (profileError) {
     // Don't leave a half-created account behind.
     await admin.auth.admin.deleteUser(data.user.id);
-    return { ok: false, message: `The invite was cancelled: ${profileError.message}` };
+    return { ok: false, message: `The invite was cancelled. ${publicMessage(profileError)}` };
   }
+
+  await recordAudit(supabase, 'user_invited', { type: 'user', id: data.user.id }, { email, role });
 
   refresh();
   return { ok: true, message: `Invite sent to ${email} as ${role}.` };
@@ -65,6 +89,8 @@ export async function inviteUser(_prev: ActionState, formData: FormData): Promis
 
 export async function changeRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const me = await requireAdmin();
+  const reauth = reauthRequired(me, '/users');
+  if (reauth) return reauth;
 
   const parsed = changeRoleSchema.safeParse({
     user_id: formData.get('user_id'),
@@ -83,7 +109,7 @@ export async function changeRole(_prev: ActionState, formData: FormData): Promis
     .update({ role: parsed.data.role })
     .eq('id', parsed.data.user_id)
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) return { ok: false, message: 'User not found.' };
 
   refresh();
@@ -95,6 +121,8 @@ export async function setEmploymentStatus(
   formData: FormData,
 ): Promise<ActionState> {
   const me = await requireAdmin();
+  const reauth = reauthRequired(me, '/users');
+  if (reauth) return reauth;
 
   const parsed = setEmploymentStatusSchema.safeParse({
     user_id: formData.get('user_id'),
@@ -115,7 +143,7 @@ export async function setEmploymentStatus(
     .update({ employment_status })
     .eq('id', user_id)
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) return { ok: false, message: 'User not found.' };
 
   const problems: string[] = [];
@@ -128,14 +156,14 @@ export async function setEmploymentStatus(
       .update({ revoked_at: new Date().toISOString() })
       .eq('user_id', user_id)
       .is('revoked_at', null);
-    if (deviceError) problems.push(`devices: ${deviceError.message}`);
+    if (deviceError) problems.push('devices');
   }
 
   // 3. Auth ban: blocks signing in again at all. Lifted on reactivation.
   const { error: banError } = await createAdminClient().auth.admin.updateUserById(user_id, {
     ban_duration: active ? 'none' : BAN_FOREVER,
   });
-  if (banError) problems.push(`sign-in block: ${banError.message}`);
+  if (banError) problems.push('sign-in block');
 
   refresh();
   if (problems.length) {
@@ -153,7 +181,9 @@ export async function setEmploymentStatus(
 }
 
 export async function resetDevice(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  await requireAdmin();
+  const me = await requireAdmin();
+  const reauth = reauthRequired(me, '/users');
+  if (reauth) return reauth;
 
   const parsed = resetDeviceSchema.safeParse({ user_id: formData.get('user_id') });
   if (!parsed.success) return invalid(parsed.error);
@@ -166,7 +196,7 @@ export async function resetDevice(_prev: ActionState, formData: FormData): Promi
     .eq('user_id', parsed.data.user_id)
     .is('revoked_at', null)
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
 
   refresh();
   return data.length

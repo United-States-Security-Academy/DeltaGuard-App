@@ -1,4 +1,8 @@
-import { INCIDENT_PHOTOS_BUCKET } from '@deltaguard/shared';
+import {
+  INCIDENT_PHOTOS_BUCKET,
+  SIGNED_URL_CACHE_MS,
+  SIGNED_URL_MAX_SECONDS,
+} from '@deltaguard/shared';
 import { useQuery } from '@tanstack/react-query';
 
 import { supabase } from './supabase';
@@ -55,12 +59,16 @@ export function useIncident(id: string) {
 
       const paths = incident.data.incident_photos.map((p) => p.storage_path);
       const signed = paths.length
-        ? await supabase.storage.from(INCIDENT_PHOTOS_BUCKET).createSignedUrls(paths, 15 * 60)
+        ? await supabase.storage
+            .from(INCIDENT_PHOTOS_BUCKET)
+            .createSignedUrls(paths, SIGNED_URL_MAX_SECONDS)
         : { data: [] };
       const photoUrls = (signed.data ?? []).flatMap((s) => (s.signedUrl ? [s.signedUrl] : []));
       return { ...incident.data, history: history.data, photoUrls };
     },
-    staleTime: 5 * 60_000,
+    // Photo links last 5 minutes: refetch before they expire.
+    staleTime: SIGNED_URL_CACHE_MS,
+    refetchInterval: SIGNED_URL_CACHE_MS,
   });
 }
 

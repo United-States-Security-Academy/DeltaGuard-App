@@ -3,9 +3,12 @@ import {
   DAR_PHOTOS_BUCKET,
   type DarEntryType,
   darEntrySchema,
+  SIGNED_URL_CACHE_MS,
+  SIGNED_URL_MAX_SECONDS,
 } from '@deltaguard/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { supabase } from './supabase';
 
@@ -59,12 +62,14 @@ export function useShiftReport(shiftId: string) {
 
 export type PickedPhoto = { base64: string; mimeType: string; uri: string };
 
-const EXTENSIONS: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/heic': 'heic',
-  'image/webp': 'webp',
-};
+/**
+ * The photo is decoded and saved again as a new JPEG (1600 px max, quality
+ * 0.7): whatever the camera or gallery gave (HEIC, WebP, PNG), only real
+ * pixels are uploaded, with no metadata (GPS, phone model) and nothing hidden
+ * in the file. The server checks the file again (verify-upload).
+ */
+const DAR_PHOTO_MAX_EDGE = 1600;
+const DAR_PHOTO_QUALITY = 0.7;
 
 function decodeBase64(base64: string): Uint8Array {
   const binary = atob(base64);
@@ -74,15 +79,29 @@ function decodeBase64(base64: string): Uint8Array {
 }
 
 async function uploadPhoto(userId: string, reportId: string, photo: PickedPhoto): Promise<string> {
-  const ext = EXTENSIONS[photo.mimeType];
-  if (!ext) throw new Error('This kind of photo isn’t supported. Use a JPEG or PNG.');
-  const bytes = decodeBase64(photo.base64);
+  let base64: string | undefined;
+  try {
+    const image = await ImageManipulator.manipulate(photo.uri, {
+      maxWidth: DAR_PHOTO_MAX_EDGE,
+      maxHeight: DAR_PHOTO_MAX_EDGE,
+    }).renderAsync();
+    const saved = await image.saveAsync({
+      compress: DAR_PHOTO_QUALITY,
+      format: SaveFormat.JPEG,
+      base64: true,
+    });
+    base64 = saved.base64;
+  } catch {
+    throw new Error('This photo couldn’t be read. Take or choose another one.');
+  }
+  if (!base64) throw new Error('This photo couldn’t be read. Take or choose another one.');
+  const bytes = decodeBase64(base64);
   if (bytes.byteLength > DAR_PHOTO_MAX_BYTES)
     throw new Error('The photo is too large (10 MB max).');
-  const path = `${userId}/${reportId}/${Crypto.randomUUID()}.${ext}`;
+  const path = `${userId}/${reportId}/${Crypto.randomUUID()}.jpg`;
   const { error } = await supabase.storage
     .from(DAR_PHOTOS_BUCKET)
-    .upload(path, bytes, { contentType: photo.mimeType, upsert: false });
+    .upload(path, bytes, { contentType: 'image/jpeg', upsert: false });
   if (error) throw new Error(`Couldn’t upload the photo: ${error.message}`);
   return path;
 }
@@ -125,11 +144,12 @@ export function usePhotoUrl(path: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase.storage
         .from(DAR_PHOTOS_BUCKET)
-        .createSignedUrl(path!, 15 * 60);
+        .createSignedUrl(path!, SIGNED_URL_MAX_SECONDS);
       if (error) throw error;
       return data.signedUrl;
     },
-    staleTime: 10 * 60_000,
+    staleTime: SIGNED_URL_CACHE_MS,
+    gcTime: SIGNED_URL_CACHE_MS,
   });
 }
 

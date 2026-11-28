@@ -4,9 +4,17 @@ import { mapLink, type Tables } from '@deltaguard/shared';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { createClient } from '@/lib/supabase/client';
+
+import {
+  resumeAlarm,
+  useAlarm,
+  useAlarmState,
+  useDesktopNotifications,
+  useMinutesSince,
+} from './alarm';
 
 import { SosActions } from './sos-actions';
 import { SosMap } from './sos-map';
@@ -66,7 +74,13 @@ export function SosWatcher() {
   const overlay = active.filter((a) => !onPage(a));
 
   useAlarm(active.length > 0);
-  useDesktopNotification(active);
+  useDesktopNotifications(
+    active.map((a) => ({
+      key: `sos-${a.id}`,
+      title: `SOS: ${a.officer_name}`,
+      body: `${a.site_name ?? 'Site unknown'}. Open the console to respond.`,
+    })),
+  );
 
   return (
     <>
@@ -214,103 +228,4 @@ function AlarmOverlay({ alerts, onChanged }: { alerts: Alert[]; onChanged: () =>
       </div>
     </div>
   );
-}
-
-function useMinutesSince(iso: string): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 15_000);
-    return () => clearInterval(t);
-  }, []);
-  return Math.floor((now - Date.parse(iso)) / 60_000);
-}
-
-// ---------------------------------------------------------------------------
-// Alarm sound (Web Audio: no audio file needed). Browsers only allow sound
-// after the user has interacted with the page; if that hasn't happened, the
-// overlay shows "Turn on alarm sound".
-// ---------------------------------------------------------------------------
-
-let audio: AudioContext | null = null;
-const listeners = new Set<() => void>();
-
-function audioState(): 'on' | 'blocked' {
-  return audio?.state === 'running' ? 'on' : 'blocked';
-}
-
-async function resumeAlarm() {
-  audio ??= new AudioContext();
-  await audio.resume().catch(() => undefined);
-  listeners.forEach((l) => l());
-}
-
-function useAlarmState() {
-  const [state, setState] = useState(audioState);
-  useEffect(() => {
-    const update = () => setState(audioState());
-    listeners.add(update);
-    // Any click or key press on the page unlocks sound.
-    const unlock = () => void resumeAlarm();
-    window.addEventListener('pointerdown', unlock, { once: true });
-    window.addEventListener('keydown', unlock, { once: true });
-    return () => {
-      listeners.delete(update);
-      window.removeEventListener('pointerdown', unlock);
-      window.removeEventListener('keydown', unlock);
-    };
-  }, []);
-  return state;
-}
-
-/** Two-tone siren every 1.6 s while `on`. */
-function useAlarm(on: boolean) {
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
-    if (!on) return;
-    audio ??= new AudioContext();
-    void audio.resume().catch(() => undefined);
-    const beep = () => {
-      const ctx = audio;
-      if (!ctx || ctx.state !== 'running') return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'square';
-      const t = ctx.currentTime;
-      osc.frequency.setValueAtTime(880, t);
-      osc.frequency.setValueAtTime(660, t + 0.35);
-      osc.frequency.setValueAtTime(880, t + 0.7);
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-      gain.gain.setValueAtTime(0.25, t + 1);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.05);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 1.1);
-    };
-    beep();
-    timer.current = setInterval(beep, 1600);
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [on]);
-}
-
-/** A system notification when the console tab is in the background. */
-function useDesktopNotification(active: Alert[]) {
-  const shown = useRef(new Set<string>());
-  useEffect(() => {
-    if (typeof Notification === 'undefined') return;
-    if (Notification.permission === 'default') void Notification.requestPermission();
-    if (Notification.permission !== 'granted' || document.visibilityState === 'visible') return;
-    for (const a of active) {
-      if (shown.current.has(a.id)) continue;
-      shown.current.add(a.id);
-      const n = new Notification(`SOS: ${a.officer_name}`, {
-        body: `${a.site_name ?? 'Site unknown'}. Open the console to respond.`,
-        requireInteraction: true,
-        tag: `sos-${a.id}`,
-      });
-      n.onclick = () => window.focus();
-    }
-  }, [active]);
 }

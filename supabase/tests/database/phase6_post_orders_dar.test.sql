@@ -36,6 +36,9 @@ insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
 insert into public.user_devices (user_id, device_id, platform) values
   ('00000000-0000-0000-0000-0000000006a1', 'phone-a', 'android'),
   ('00000000-0000-0000-0000-0000000006b1', 'phone-b', 'ios');
+-- Phase 20: mark fixture phones verified, so attendance flags here stay
+-- about attendance (device flags have their own tests).
+update public.user_devices set integrity_status = 'verified', integrity_checked_at = now();
 
 insert into public.clients (id, name) values ('00000000-0000-0000-0000-00000006c001', 'P6 Client');
 

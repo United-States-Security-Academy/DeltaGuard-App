@@ -7,6 +7,7 @@ import { cache, Suspense } from 'react';
 import { SearchIcon, SignOutIcon } from '@/components/icons';
 import { SosWatcher } from '@/components/sos-watcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { WelfareWatcher } from '@/components/welfare-watcher';
 import { Avatar } from '@/components/ui';
 import { requireStaff } from '@/lib/auth';
 import { MFA_REQUIRED } from '@/lib/mfa';
@@ -75,10 +76,11 @@ export default function ConsoleLayout({ children }: LayoutProps<'/'>) {
             </div>
           </header>
           <main className="flex-1">{children}</main>
-          {/* Full-screen alarm for an unacknowledged SOS, on every page. */}
+          {/* Full-screen alarms for an unacknowledged SOS or escalated welfare check, on every page. */}
           <Suspense fallback={null}>
             <StaffOnly>
               <SosWatcher />
+              <WelfareWatcher />
             </StaffOnly>
           </Suspense>
         </div>
@@ -108,7 +110,7 @@ const navItems = cache(
   }> => {
     const staff = await requireStaff();
     const supabase = await createClient();
-    const [waiting, profile, chats, openSos] = await Promise.all([
+    const [waiting, profile, chats, openSos, formsWaiting, welfareOpen] = await Promise.all([
       supabase
         .from('incidents')
         .select('id', { count: 'exact', head: true })
@@ -119,18 +121,31 @@ const navItems = cache(
         .from('sos_alerts')
         .select('id', { count: 'exact', head: true })
         .in('status', ['active', 'acknowledged']),
+      // RLS: supervisors only count submissions for their sites.
+      supabase
+        .from('form_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'submitted'),
+      // RLS: supervisors count their sites and checks they were alerted about.
+      supabase
+        .from('welfare_checks')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'escalated'),
     ]);
     const unreadMessages = (chats.data ?? []).reduce((n, c) => n + c.unread_count, 0);
 
     const items: NavItem[] = [
       { href: '/', label: 'Dashboard', icon: 'dashboard' },
       { href: '/sos', label: 'SOS', icon: 'sos', badge: openSos.count ?? 0 },
+      { href: '/welfare', label: 'Welfare', icon: 'welfare', badge: welfareOpen.count ?? 0 },
       { href: '/schedule/today', label: 'Live board', icon: 'live' },
       { href: '/schedule', label: 'Schedule', icon: 'schedule' },
       { href: '/officers', label: 'Officers', icon: 'officers' },
       { href: '/clients', label: 'Clients', icon: 'clients' },
       { href: '/sites', label: 'Sites', icon: 'sites' },
       { href: '/incidents', label: 'Incidents', icon: 'incidents', badge: waiting.count ?? 0 },
+      { href: '/forms', label: 'Forms', icon: 'forms', badge: formsWaiting.count ?? 0 },
+      { href: '/training', label: 'Training', icon: 'training' },
       { href: '/timesheets', label: 'Timesheets', icon: 'timesheets' },
       { href: '/messages', label: 'Messages', icon: 'messages', badge: unreadMessages },
     ];

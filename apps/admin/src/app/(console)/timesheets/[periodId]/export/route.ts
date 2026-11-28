@@ -3,7 +3,9 @@ import ExcelJS from 'exceljs';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { getStaffSession } from '@/lib/auth';
+import { auditFailed, exportBlocked, recordAudit } from '@/lib/audit';
+import { getStaffSession, hasRecentMfa, reauthUrl } from '@/lib/auth';
+import { csvCell, neutralizeFormula } from '@/lib/csv';
 import { createClient } from '@/lib/supabase/server';
 
 import { getTimeZone } from '../../../schedule/data';
@@ -20,7 +22,13 @@ export async function GET(
   request: Request,
   { params }: RouteContext<'/timesheets/[periodId]/export'>,
 ) {
-  if (!(await getStaffSession())) return new NextResponse('Not allowed', { status: 403 });
+  const session = await getStaffSession();
+  if (!session) return new NextResponse('Not allowed', { status: 403 });
+  // Payroll export: the authenticator code must have been entered recently.
+  if (!hasRecentMfa(session)) {
+    const url = new URL(request.url);
+    return NextResponse.redirect(new URL(reauthUrl(url.pathname + url.search), url), 303);
+  }
 
   const periodId = z.uuid().safeParse((await params).periodId);
   const format = z
@@ -36,6 +44,9 @@ export async function GET(
     return new NextResponse('Only locked pay periods can be exported', { status: 409 });
   }
 
+  const blocked = await exportBlocked(supabase);
+  if (blocked) return blocked;
+
   const timeZone = await getTimeZone(supabase);
   const entries = (await loadEntries(supabase, period))
     .filter((e) => e.status === 'approved')
@@ -47,10 +58,17 @@ export async function GET(
   const rows = entries.map((e) => PAYROLL_COLUMNS.map((c) => c.value(e, { timeZone })));
   const name = `deltacon-payroll-${period.starts_on}-to-${period.ends_on}`;
   const headers = { 'Cache-Control': 'no-store' };
+  const audited = await recordAudit(
+    supabase,
+    'payroll_export',
+    { type: 'pay_period', id: period.id },
+    { format, entries: entries.length, starts_on: period.starts_on, ends_on: period.ends_on },
+  );
+  if (!audited) return auditFailed();
 
   if (format === 'csv') {
     const lines = [PAYROLL_COLUMNS.map((c) => c.header), ...rows].map((r) =>
-      r.map(csvCell).join(','),
+      r.map(payrollCsvCell).join(','),
     );
     // BOM so Excel opens UTF-8 (names with accents) correctly.
     return new NextResponse(`﻿${lines.join('\r\n')}\r\n`, {
@@ -72,15 +90,9 @@ export async function GET(
   });
 }
 
-/**
- * RFC 4180 quoting, and a leading apostrophe on text that a spreadsheet
- * would run as a formula (names and reasons are typed by people).
- */
-function csvCell(value: PayrollCell): string {
-  if (value === null) return '';
-  if (typeof value === 'number') return String(value);
-  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
-  return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+/** CSV cell (RFC 4180, formula-safe: lib/csv.ts). */
+function payrollCsvCell(value: PayrollCell): string {
+  return csvCell(value);
 }
 
 async function xlsx(
@@ -90,15 +102,16 @@ async function xlsx(
   endsOn: string,
 ): Promise<ArrayBuffer> {
   const book = new ExcelJS.Workbook();
-  book.creator = 'Deltacon Guard';
+  book.creator = 'DeltaGuard';
   book.created = new Date();
 
   const sheet = book.addWorksheet('Timesheet', { views: [{ state: 'frozen', ySplit: 1 }] });
   sheet.columns = PAYROLL_COLUMNS.map((c) => ({ header: c.header, width: c.width }));
   sheet.getRow(1).font = { bold: true };
   for (const row of rows) {
-    // ExcelJS writes strings as text cells, never formulas.
-    sheet.addRow(row.map((v) => v ?? ''));
+    // ExcelJS writes strings as text cells, never formulas; text that looks
+    // like a formula is still made inert, in case the sheet is saved as CSV.
+    sheet.addRow(row.map((v) => (typeof v === 'string' ? neutralizeFormula(v) : (v ?? ''))));
   }
   PAYROLL_COLUMNS.forEach((c, i) => {
     if (c.header === 'Worked hours') sheet.getColumn(i + 1).numFmt = '0.00';
@@ -134,7 +147,13 @@ async function xlsx(
     byOfficer.set(e.officer_id, t);
   }
   for (const t of [...byOfficer.values()].sort((a, b) => a.name.localeCompare(b.name))) {
-    totals.addRow([t.number, t.name, t.shifts, t.minutes, decimalHours(t.minutes)]);
+    totals.addRow([
+      neutralizeFormula(t.number),
+      neutralizeFormula(t.name),
+      t.shifts,
+      t.minutes,
+      decimalHours(t.minutes),
+    ]);
   }
   totals.getColumn(5).numFmt = '0.00';
   totals.addRow([]);

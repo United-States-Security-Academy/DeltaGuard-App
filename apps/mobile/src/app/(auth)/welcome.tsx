@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Eyebrow, Notice, Title } from '@/components/ui';
 import logo from '@/assets/images/logo.png';
 import { useSession } from '@/lib/session';
-import { brand } from '@/lib/theme';
+import { brand, fx } from '@/lib/theme';
 
 // The badge is 1121 x 1396; keep that ratio.
 const LOGO_HEIGHT = 210;
@@ -43,11 +43,15 @@ export default function WelcomeScreen() {
   const notice = state.status === 'signedOut' ? state.notice : undefined;
 
   return (
-    <View className="flex-1 bg-ink">
-      {/* Hero */}
+    <View className="flex-1" style={fx.screen}>
+      {/* Hero: a flat navy slab, rounded at the bottom. */}
       <View
-        className="flex-1 overflow-hidden rounded-b-[40px] border-b border-gold/25 bg-navy"
-        style={{ paddingTop: insets.top }}
+        className="flex-1 overflow-hidden rounded-b-[44px] border-b border-gold/30"
+        style={{
+          paddingTop: insets.top,
+          backgroundColor: brand.navy,
+          boxShadow: '0px 10px 24px rgba(0,0,0,0.4)',
+        }}
       >
         <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
           {RINGS.map((ring) => (

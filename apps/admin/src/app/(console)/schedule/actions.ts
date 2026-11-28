@@ -14,6 +14,7 @@ import {
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireStaff } from '@/lib/auth';
 import { checked, num, text } from '@/lib/form-data';
@@ -97,7 +98,7 @@ function writeError(error: { code?: string; message: string }): ActionState {
     };
   }
   // Includes shifts_before_write's "must be assigned" check (23514), which is already readable.
-  return { ok: false, message: error.message };
+  return failed(error);
 }
 
 function overlapMessage(overlaps: OverlapWarning[]): string {
@@ -315,7 +316,7 @@ export async function cancelShift(_prev: ActionState, fd: FormData): Promise<Act
     .eq('id', id.data.id)
     .in('status', ['scheduled', 'acknowledged'])
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) {
     return { ok: false, message: 'Only shifts that haven’t started can be cancelled.' };
   }

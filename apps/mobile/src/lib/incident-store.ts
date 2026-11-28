@@ -1,5 +1,6 @@
 import type { IncidentCategory, IncidentSeverity } from '@deltaguard/shared';
 import { Directory, File, Paths } from 'expo-file-system';
+import { readEncryptedText, writeEncryptedText } from './vault';
 
 // Incident reports that live on this phone: drafts being written, and
 // submitted reports waiting to be sent (the offline queue). See
@@ -106,7 +107,7 @@ async function load(userId: string): Promise<LocalIncident[]> {
   const file = indexFile(userId);
   if (!file.exists) return [];
   try {
-    const parsed: unknown = JSON.parse(await file.text());
+    const parsed: unknown = JSON.parse(await readEncryptedText(file, userId));
     return Array.isArray(parsed) ? parsed.filter(isLocalIncident) : [];
   } catch {
     return [];
@@ -116,13 +117,9 @@ async function load(userId: string): Promise<LocalIncident[]> {
 async function save(userId: string, items: LocalIncident[]): Promise<void> {
   const dir = userDir(userId);
   dir.create({ intermediates: true, idempotent: true });
-  // Write a new file, then swap it in, so a crash mid-write can't leave a
-  // half-written index.
-  const tmp = new File(dir, 'reports.json.tmp');
-  if (tmp.exists) tmp.delete();
-  tmp.create();
-  await tmp.write(JSON.stringify(items));
-  await tmp.move(indexFile(userId), { overwrite: true });
+  // Encrypted (lib/vault.ts), written to a new file and swapped in so a crash
+  // mid-write can't leave a half-written index.
+  await writeEncryptedText(indexFile(userId), userId, JSON.stringify(items));
 }
 
 // Every read-modify-write runs one at a time, so autosave and the sync loop

@@ -24,6 +24,7 @@ import {
 } from './clock-queue';
 import { getOrCreateDeviceId } from './device';
 import type { Fix } from './location';
+import { isOfflineState, looksOffline } from './network';
 import { acceptedEvent, type CompanySettings, type MyShift, shiftKeys } from './shifts';
 
 // ---------------------------------------------------------------------------
@@ -103,13 +104,6 @@ export function useClock() {
 /** While anything is queued, try again this often (in case no network event fires). */
 const RETRY_EVERY_MS = 60_000;
 
-async function looksOffline(): Promise<boolean> {
-  const state = await Network.getNetworkStateAsync().catch(() => null);
-  // isInternetReachable can be undefined while the OS is still checking: only
-  // an explicit false counts as offline. Anything else, just try the request.
-  return state?.isConnected === false || state?.isInternetReachable === false;
-}
-
 export function ClockProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<QueuedClockEvent[]>([]);
@@ -157,13 +151,7 @@ export function ClockProvider({ userId, children }: { userId: string; children: 
   // Send as soon as the phone is back online or the app comes to the front.
   useEffect(() => {
     const network = Network.addNetworkStateListener((state) => {
-      if (
-        pendingRef.current.length > 0 &&
-        state.isConnected &&
-        state.isInternetReachable !== false
-      ) {
-        void flush();
-      }
+      if (pendingRef.current.length > 0 && !isOfflineState(state)) void flush();
     });
     const app = AppState.addEventListener('change', (state) => {
       if (state === 'active' && pendingRef.current.length > 0) void flush();

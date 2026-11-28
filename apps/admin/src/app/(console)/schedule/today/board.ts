@@ -5,6 +5,7 @@ import { addDaysIso, fromZoned, type ShiftStatus, todayInZone } from '@deltaguar
 import type { createClient } from '@/lib/supabase/server';
 
 import { expiredOn, licenceExpiries } from '../data';
+import { loadFailed } from '@/lib/server-errors';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -70,8 +71,7 @@ export async function loadTodayBoard(
     .lt('starts_at', dayEnd)
     .gt('ends_at', dayStart)
     .order('starts_at');
-  if (shifts.error)
-    return { ok: false, error: `Could not load today’s shifts: ${shifts.error.message}` };
+  if (shifts.error) return { ok: false, error: loadFailed('today’s shifts', shifts.error) };
 
   const shiftIds = shifts.data.map((s) => s.id);
   const [events, expiries] = await Promise.all([
@@ -84,8 +84,7 @@ export async function loadTodayBoard(
       : Promise.resolve({ data: [], error: null }),
     licenceExpiries(supabase, [...new Set(shifts.data.map((s) => s.officer_id))]),
   ]);
-  if (events.error)
-    return { ok: false, error: `Could not load attendance: ${events.error.message}` };
+  if (events.error) return { ok: false, error: loadFailed('attendance', events.error) };
 
   const rows: BoardRow[] = shifts.data.map((s) => {
     const mine = events.data.filter((e) => e.shift_id === s.id);

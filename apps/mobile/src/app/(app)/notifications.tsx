@@ -9,7 +9,7 @@ import { Body, Button, ErrorState } from '@/components/ui';
 import { type InboxItem, routeFor, useInbox, useMarkRead } from '@/lib/notifications';
 import { useSession } from '@/lib/session';
 import { useCompanySettings } from '@/lib/shifts';
-import { brand } from '@/lib/theme';
+import { brand, fx } from '@/lib/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -40,12 +40,14 @@ function Inbox({ userId }: { userId: string }) {
   function open(item: InboxItem) {
     if (!item.readAt) markRead.mutate([item.id]);
     const route = routeFor(item.type, item.data);
-    if (route !== '/notifications') router.push(route);
+    // navigate, not push: a shift or chat opens in the existing tabs (closing
+    // the inbox) instead of stacking a second tab bar on top of it.
+    if (route !== '/notifications') router.navigate(route);
   }
 
   if (inbox.isPending) {
     return (
-      <View className="flex-1 items-center justify-center bg-ink">
+      <View className="flex-1 items-center justify-center" style={fx.screen}>
         <ActivityIndicator color={brand.gold} />
       </View>
     );
@@ -53,7 +55,8 @@ function Inbox({ userId }: { userId: string }) {
 
   return (
     <ScrollView
-      className="flex-1 bg-ink"
+      className="flex-1"
+      style={fx.screen}
       contentContainerClassName="gap-3 p-5 pb-10"
       refreshControl={
         <RefreshControl
@@ -86,11 +89,22 @@ function Inbox({ userId }: { userId: string }) {
           onPress={() => open(n)}
           accessibilityRole="button"
           accessibilityState={{ selected: !n.readAt }}
-          className={`flex-row gap-3 rounded-2xl border p-4 active:opacity-70 ${
-            n.readAt ? 'border-white/10 bg-navy/60' : 'border-gold/50 bg-navy'
+          className={`flex-row gap-4 rounded-3xl border p-4 active:opacity-70 ${
+            n.readAt ? 'border-white/[0.06] opacity-80' : 'border-gold/45'
           }`}
+          style={n.readAt ? fx.glass : fx.glassGlow}
         >
-          <Ionicons name={ICONS[n.type] ?? 'notifications-outline'} size={22} color={brand.gold} />
+          <View
+            className={`h-11 w-11 items-center justify-center rounded-full border ${
+              n.readAt ? 'border-white/15' : 'border-gold/70 bg-gold/10'
+            }`}
+          >
+            <Ionicons
+              name={ICONS[n.type] ?? 'notifications-outline'}
+              size={20}
+              color={n.readAt ? 'rgba(255,255,255,0.6)' : brand.gold}
+            />
+          </View>
           <View className="flex-1 gap-1">
             <View className="flex-row items-start gap-2">
               <Text

@@ -3,6 +3,7 @@ import 'server-only';
 import { attendanceFlagLabel, todayInZone, toZoned } from '@deltaguard/shared';
 
 import type { createClient } from '@/lib/supabase/server';
+import { loadError } from '@/lib/server-errors';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -11,7 +12,7 @@ export async function loadPeriods(supabase: Supabase) {
     .from('pay_periods')
     .select('id, starts_on, ends_on, status, locked_at')
     .order('starts_on', { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw loadError('data', error);
   return data;
 }
 
@@ -48,7 +49,7 @@ export async function loadEntries(supabase: Supabase, period: Period) {
     .order('work_date')
     .order('corrected_at', { referencedTable: 'timesheet_corrections' })
     .limit(5000);
-  if (error) throw new Error(error.message);
+  if (error) throw loadError('data', error);
   return data;
 }
 

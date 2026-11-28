@@ -46,7 +46,7 @@ export type QualificationInput = z.infer<typeof qualificationSchema>;
 /** A license scan before upload (checked again by the bucket's own limits). */
 export const licenseFileSchema = z.object({
   size: z.number().int().positive().max(LICENSE_FILE_MAX_BYTES, 'File must be 10 MB or smaller'),
-  type: z.enum(LICENSE_FILE_MIME_TYPES, 'Upload a JPEG, PNG, HEIC, WebP or PDF'),
+  type: z.enum(LICENSE_FILE_MIME_TYPES, 'Upload a JPEG, PNG or PDF'),
 });
 
 // Admin console: officers list filters, read from the URL. `.catch` makes a
@@ -61,6 +61,6 @@ export const officerListFiltersSchema = z.object({
 });
 export type OfficerListFilters = z.infer<typeof officerListFiltersSchema>;
 
-export const OFFICER_TABS = ['details', 'qualifications', 'sites'] as const;
+export const OFFICER_TABS = ['details', 'qualifications', 'sites', 'welfare'] as const;
 export const officerTabSchema = z.preprocess(firstParam, z.enum(OFFICER_TABS)).catch('details');
 export type OfficerTab = z.infer<typeof officerTabSchema>;

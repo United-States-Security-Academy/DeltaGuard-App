@@ -2,20 +2,34 @@ import '../global.css';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import * as ScreenCapture from 'expo-screen-capture';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LockScreen } from '@/components/lock-screen';
 import { Button, Loading, Notice, Title } from '@/components/ui';
 import { queryClient } from '@/lib/query-client';
 import { SessionProvider, useSession } from '@/lib/session';
-import { brand } from '@/lib/theme';
+import { brand, fx } from '@/lib/theme';
 
 // Keep the splash screen up until we know whether someone is signed in.
 void SplashScreen.preventAutoHideAsync();
+// iOS: blur DeltaGuard in the app switcher so a glance at the phone doesn't
+// show reports or personal data. (Android: modules/welfare-alarm hides it.)
+if (Platform.OS === 'ios') {
+  void ScreenCapture.enableAppSwitcherProtectionAsync(0.9).catch(() => undefined);
+}
+
+// Portrait everywhere. app.json allows every orientation only so the
+// signature pad (components/signature-pad.tsx) can turn to landscape; iOS
+// starts portrait through the expo-screen-orientation plugin.
+void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
 
 // Headers, the tab bar and screen backgrounds use the Deltacon palette. The
 // app is always dark (app.json userInterfaceStyle), matching the badge.
@@ -34,14 +48,21 @@ const BrandNavTheme = {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider value={BrandNavTheme}>
-      <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          <RootNavigator />
-          <StatusBar style="light" />
-        </SessionProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+    // KeyboardProvider: keyboard tracking for components/keyboard.tsx (Android
+    // is edge-to-edge, so the window doesn't resize for the keyboard).
+    // GestureHandlerRootView: pinch-to-zoom on form pages (components/form-page.tsx).
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <KeyboardProvider>
+        <ThemeProvider value={BrandNavTheme}>
+          <QueryClientProvider client={queryClient}>
+            <SessionProvider>
+              <RootNavigator />
+              <StatusBar style="light" />
+            </SessionProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </KeyboardProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -72,7 +93,8 @@ function RootNavigator() {
   // is allowed and drops the others from history.
   return (
     <View className="flex-1 bg-ink">
-      <Stack screenOptions={{ headerShown: false }}>
+      {/* contentStyle paints the page gradient (screens are transparent). */}
+      <Stack screenOptions={{ headerShown: false, contentStyle: fx.backdrop }}>
         {/* redirectTo says where to go when a URL hits a blocked group,
             e.g. the app opening at "/" (Home) while signed out. */}
         <Stack.Protected guard={signedIn} redirectTo="/welcome">

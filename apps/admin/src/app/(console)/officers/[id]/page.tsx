@@ -19,9 +19,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
 import { assignOfficer, unassignOfficer } from '../../sites/assignment-actions';
+import { OfficerWelfare } from '../../welfare/officer-welfare';
 import { deleteQualification } from '../actions';
 import { OfficerDetailsForm } from './details-form';
 import { QualificationForm } from './qualification-form';
+import { loadFailed } from '@/lib/server-errors';
 
 type Props = PageProps<'/officers/[id]'>;
 
@@ -52,7 +54,7 @@ async function OfficerContent({ params, searchParams }: Pick<Props, 'params' | '
     .eq('id', officerId)
     .maybeSingle();
 
-  if (error) return <ErrorText>Could not load this officer: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('this officer', error)}</ErrorText>;
   if (!officer || officer.role !== 'officer') notFound();
 
   // Emails live in auth.users; only the service role can read them, so only
@@ -83,6 +85,12 @@ async function OfficerContent({ params, searchParams }: Pick<Props, 'params' | '
         <DetailsTab staff={staff} officer={officer} />
       ) : tab === 'qualifications' ? (
         <QualificationsTab staff={staff} officerId={officerId} />
+      ) : tab === 'welfare' ? (
+        <OfficerWelfare
+          supabase={supabase}
+          officerId={officerId}
+          isAdmin={staff.role === 'admin'}
+        />
       ) : (
         <SitesTab
           staff={staff}
@@ -98,6 +106,7 @@ const TAB_LABELS: Record<OfficerTab, string> = {
   details: 'Details',
   qualifications: 'Qualifications',
   sites: 'Assigned sites',
+  welfare: 'Welfare checks',
 };
 
 function Tabs({ officerId, current }: { officerId: string; current: OfficerTab }) {
@@ -190,13 +199,14 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
 // Qualifications ---------------------------------------------------------------
 
 async function QualificationsTab({ staff, officerId }: { staff: StaffSession; officerId: string }) {
+  await requireStaff(); // each data-loading component checks access itself
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('qualifications')
     .select('id, type, license_number, issued_on, expires_on, document_path')
     .eq('user_id', officerId)
     .order('expires_on', { ascending: true, nullsFirst: false });
-  if (error) return <ErrorText>Could not load qualifications: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('qualifications', error)}</ErrorText>;
 
   const today = todayIso();
   const isAdmin = staff.role === 'admin';
@@ -271,6 +281,7 @@ async function SitesTab({
   officerId: string;
   active: boolean;
 }) {
+  await requireStaff(); // each data-loading component checks access itself
   const supabase = await createClient();
   const [assigned, allSites] = await Promise.all([
     supabase
@@ -279,7 +290,7 @@ async function SitesTab({
       .eq('officer_id', officerId),
     supabase.from('sites').select('id, name, clients(name)').eq('active', true).order('name'),
   ]);
-  if (assigned.error) return <ErrorText>Could not load sites: {assigned.error.message}</ErrorText>;
+  if (assigned.error) return <ErrorText>{loadFailed('sites', assigned.error)}</ErrorText>;
 
   const isAdmin = staff.role === 'admin';
   const assignedIds = new Set(assigned.data.map((a) => a.site_id));

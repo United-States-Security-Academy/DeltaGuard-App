@@ -48,3 +48,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# EAS Update code signing: the PRIVATE key never goes into git (keep it in a
+# password manager / CI secret). certs/certificate.pem is public and committed.
+apps/mobile/keys/
+# ...but the update-signing CERTIFICATE is public and every build needs it.
+!apps/mobile/certs/certificate.pem

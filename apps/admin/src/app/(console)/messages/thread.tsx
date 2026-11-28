@@ -8,6 +8,8 @@ import {
   chatAttachmentPath,
   type Database,
   sendMessageSchema,
+  SIGNED_URL_CACHE_MS,
+  SIGNED_URL_MAX_SECONDS,
 } from '@deltaguard/shared';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -15,6 +17,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import { ArrowRightIcon, CloseIcon, GroupIcon, ImageIcon, SendIcon } from '@/components/icons';
 import { Avatar } from '@/components/ui';
 import { consoleError, withSessionRetry } from '@/lib/errors';
+import { reencodeImage } from '@/lib/reencode-image';
 import { createClient } from '@/lib/supabase/client';
 
 import { chatTime, type Conversation } from './messages-app';
@@ -34,10 +37,11 @@ type Message = {
 };
 
 const COLUMNS = 'id, conversation_id, sender_id, body, attachment_path, created_at';
+/** Every picked image is uploaded as JPEG (re-encoded in the browser). */
 const EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
+  'image/png': 'jpg',
+  'image/webp': 'jpg',
 };
 
 /** Oldest first; ids are unique. */
@@ -182,22 +186,36 @@ export function Thread({
     };
   }, [supabase, conversationId, userId, fetchPage, loadPeople, markRead]);
 
-  // Signed links for photos we don't have yet (private bucket, 1 hour).
+  // Signed links last 5 minutes: forget them before then so they are re-signed.
+  useEffect(() => {
+    const timer = setInterval(() => setUrls({}), SIGNED_URL_CACHE_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Signed links for photos we don't have yet (private bucket, 5 minutes). A
+  // photo just sent may still be in its content check (only the sender can
+  // read it until then): try again a few seconds later.
+  const [signRetry, setSignRetry] = useState(0);
   useEffect(() => {
     const missing = messages
       .map((m) => m.attachment_path)
       .filter((p): p is string => Boolean(p) && !(p! in urls));
     if (missing.length === 0) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     void supabase.storage
       .from(CHAT_ATTACHMENTS_BUCKET)
-      .createSignedUrls(missing, 60 * 60)
+      .createSignedUrls(missing, SIGNED_URL_MAX_SECONDS)
       .then(({ data }) => {
         const found = Object.fromEntries(
           (data ?? []).flatMap((s) => (s.path && s.signedUrl ? [[s.path, s.signedUrl]] : [])),
         );
         setUrls((current) => ({ ...current, ...found }));
+        if (Object.keys(found).length < missing.length && signRetry < 10) {
+          timer = setTimeout(() => setSignRetry((n) => n + 1), 3000);
+        }
       });
-  }, [messages, urls, supabase]);
+    return () => clearTimeout(timer);
+  }, [messages, urls, supabase, signRetry]);
 
   // Stay at the bottom as messages arrive, unless the user scrolled up to read.
   useEffect(() => {
@@ -244,10 +262,12 @@ export function Thread({
       let attachmentPath: string | null = null;
       if (file) {
         const checked = chatAttachmentFileSchema.parse({ type: file.type, size: file.size });
+        // Redrawn as a fresh JPEG: only real pixels are sent (see reencodeImage).
+        const image = await reencodeImage(file, { maxEdge: 1600, quality: 0.8 });
         attachmentPath = chatAttachmentPath(conversationId, userId, id, EXTENSIONS[checked.type]!);
         const upload = await supabase.storage
           .from(CHAT_ATTACHMENTS_BUCKET)
-          .upload(attachmentPath, file, { contentType: checked.type, upsert: false });
+          .upload(attachmentPath, image, { contentType: 'image/jpeg', upsert: false });
         if (upload.error) throw upload.error;
       }
       const row = sendMessageSchema.parse({

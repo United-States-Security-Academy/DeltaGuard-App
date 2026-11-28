@@ -5,6 +5,7 @@ import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { failed } from '@/lib/server-errors';
 import { type ActionState, invalid } from '@/lib/action-state';
 import { requireStaff } from '@/lib/auth';
 import { text } from '@/lib/form-data';
@@ -31,7 +32,7 @@ export async function createPostOrder(_prev: ActionState, fd: FormData): Promise
     .insert({ site_id: site.data.id, ...parsed.data })
     .select('id')
     .single();
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
 
   redirect(`/sites/${site.data.id}/post-orders/${data.id}`);
 }
@@ -51,7 +52,7 @@ export async function updatePostOrder(_prev: ActionState, fd: FormData): Promise
     .eq('id', id.data.id)
     .select('version')
     .maybeSingle();
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data) return { ok: false, message: 'Post order not found.' };
 
   refresh();
@@ -74,7 +75,7 @@ export async function setPostOrderArchived(_prev: ActionState, fd: FormData): Pr
     .update({ archived_at: archive ? new Date().toISOString() : null })
     .eq('id', id.data.id)
     .select('id');
-  if (error) return { ok: false, message: error.message };
+  if (error) return failed(error);
   if (!data.length) return { ok: false, message: 'Post order not found.' };
 
   refresh();

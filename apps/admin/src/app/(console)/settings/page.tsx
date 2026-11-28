@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 import { SettingsForm } from './settings-form';
+import { loadFailed } from '@/lib/server-errors';
 
 export default function SettingsPage() {
   return (
@@ -47,10 +48,12 @@ async function SettingsContent() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('settings')
-    .select('time_zone, late_grace_minutes, early_clock_in_minutes, low_accuracy_threshold_m')
+    .select(
+      'time_zone, late_grace_minutes, early_clock_in_minutes, low_accuracy_threshold_m, integrity_enforcement',
+    )
     .maybeSingle();
 
-  if (error) return <ErrorText>Could not load settings: {error.message}</ErrorText>;
+  if (error) return <ErrorText>{loadFailed('settings', error)}</ErrorText>;
   if (!data) return <ErrorText>The settings row is missing.</ErrorText>;
 
   return (

@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Deltacon Guard",
+    "name": "DeltaGuard",
     "slug": "deltaguard",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "deltaguard",
     "userInterfaceStyle": "dark",
@@ -12,6 +12,10 @@
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true,
+        "com.apple.developer.devicecheck.appattest-environment": "production"
       }
     },
     "android": {
@@ -33,7 +37,8 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
-      ]
+      ],
+      "allowBackup": false
     },
     "web": {
       "output": "single",
@@ -53,10 +58,10 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Deltacon Guard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
-          "locationAlwaysAndWhenInUsePermission": "Deltacon Guard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
-          "locationAlwaysPermission": "Deltacon Guard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
-          "locationFullAccuracyPermission": "Deltacon Guard needs your exact location to confirm you are inside the site area when you clock in or out.",
+          "locationWhenInUsePermission": "DeltaGuard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
+          "locationAlwaysAndWhenInUsePermission": "DeltaGuard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
+          "locationAlwaysPermission": "DeltaGuard checks where you are only at the moment you clock in, clock out or send an SOS. This confirms you are at your post and tells responders where to find you. It never tracks you in the background.",
+          "locationFullAccuracyPermission": "DeltaGuard needs your exact location to confirm you are inside the site area when you clock in or out.",
           "motionUsagePermission": false,
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false,
@@ -67,14 +72,14 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Deltacon Guard uses Face ID to unlock the app, so nobody else can open it on your phone."
+          "faceIDPermission": "DeltaGuard uses Face ID to unlock the app and to confirm it is you when you sign a form."
         }
       ],
       [
         "expo-image-picker",
         {
-          "cameraPermission": "Deltacon Guard uses the camera only when you take a photo for an incident report, your daily activity report or a message.",
-          "photosPermission": "Deltacon Guard opens your photos only when you choose one to add to an incident report, your daily activity report or a message.",
+          "cameraPermission": "DeltaGuard uses the camera only when you take a photo for an incident report, your daily activity report or a message.",
+          "photosPermission": "DeltaGuard opens your photos only when you choose one to add to an incident report, your daily activity report or a message.",
           "microphonePermission": false
         }
       ],
@@ -83,12 +88,38 @@
         {
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#D6B562",
-          "defaultChannel": "default"
+          "defaultChannel": "default",
+          "sounds": [
+            "./assets/sounds/welfare_alarm.wav"
+          ]
         }
       ],
       "expo-font",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "PORTRAIT_UP"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": false
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -112,7 +143,12 @@
     "updates": {
       "url": "https://u.expo.dev/50468283-33ec-426c-be79-08b0a5869f1b",
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "codeSigningCertificate": "./certs/certificate.pem",
+      "codeSigningMetadata": {
+        "keyid": "main",
+        "alg": "rsa-v1_5-sha256"
+      }
     }
   }
 }

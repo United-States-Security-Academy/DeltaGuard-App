@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { Badge, Button, EmptyState, ErrorText, Select, Table } from '@/components/ui';
 import { requireStaff } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
+import { loadFailed } from '@/lib/server-errors';
 
 const filtersSchema = z.object({
   q: z.preprocess(firstParam, z.string().trim().max(100)).catch(''),
@@ -41,7 +42,7 @@ async function SitesContent({
       .order('name'),
     supabase.from('clients').select('id, name').order('name'),
   ]);
-  if (sites.error) return <ErrorText>Could not load sites: {sites.error.message}</ErrorText>;
+  if (sites.error) return <ErrorText>{loadFailed('sites', sites.error)}</ErrorText>;
 
   const needle = filters.q.toLowerCase();
   const rows = sites.data.filter(

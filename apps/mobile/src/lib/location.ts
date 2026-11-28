@@ -1,6 +1,8 @@
 import * as Location from 'expo-location';
 import { Linking, Platform } from 'react-native';
 
+import { reportMockLocation } from './integrity';
+
 // One-off location fixes for clock-in, clock-out (and later SOS). Nothing here
 // watches the location or runs in the background: each call asks the OS for a
 // single fix and stops (CLAUDE.md: location only at clock-in/out and SOS).
@@ -77,6 +79,9 @@ export async function getClockFix(): Promise<FixResult> {
     if (position === 'timeout') return { ok: false, reason: 'timeout' };
 
     const { latitude, longitude, accuracy } = position.coords;
+    // A fake-location app is flagged to supervisors (lib/integrity.ts); the
+    // clock-in itself is refused by the server for a mocked fix.
+    if (position.mocked === true) reportMockLocation();
     return {
       ok: true,
       fix: {

@@ -23,6 +23,7 @@ import { requireStaff } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/server';
 
 import { getTimeZone } from '../schedule/data';
+import { loadFailed } from '@/lib/server-errors';
 
 const LIMIT = 200;
 
@@ -89,8 +90,7 @@ async function IncidentsContent({
     supabase.from('sites').select('id, name').order('name'),
     supabase.from('profiles').select('id, full_name').order('full_name'),
   ]);
-  if (incidents.error)
-    return <ErrorText>Could not load incidents: {incidents.error.message}</ErrorText>;
+  if (incidents.error) return <ErrorText>{loadFailed('incidents', incidents.error)}</ErrorText>;
   const rows = incidents.data;
 
   const when = (iso: string) => {

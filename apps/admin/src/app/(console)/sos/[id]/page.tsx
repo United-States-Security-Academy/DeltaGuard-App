@@ -14,6 +14,7 @@ import { formatWhen } from '../../incidents/data';
 import { getTimeZone } from '../../schedule/data';
 import { SOS_TONE } from '../tone';
 import { SosLiveRefresh } from './live-refresh';
+import { loadFailed } from '@/lib/server-errors';
 
 export default function SosAlertPage({ params }: PageProps<'/sos/[id]'>) {
   return (
@@ -61,9 +62,9 @@ async function AlertDetail({ params }: { params: PageProps<'/sos/[id]'>['params'
     supabase.from('sos_alerts').select('*').eq('id', id.data).maybeSingle(),
     supabase.from('sos_events').select('*').eq('alert_id', id.data).order('created_at').order('id'),
   ]);
-  if (alert.error) return <ErrorText>Could not load the alert: {alert.error.message}</ErrorText>;
+  if (alert.error) return <ErrorText>{loadFailed('the alert', alert.error)}</ErrorText>;
   if (!alert.data) notFound();
-  if (events.error) return <ErrorText>Could not load the log: {events.error.message}</ErrorText>;
+  if (events.error) return <ErrorText>{loadFailed('the log', events.error)}</ErrorText>;
   const a = alert.data;
   const when = (iso: string) => formatWhen(iso, timeZone);
 

@@ -1,8 +1,6 @@
 // sos-dispatch: sends the SOS text messages queued in public.sos_sms_outbox.
-// Deployed with verify_jwt = false (see supabase/config.toml): it only ever
-// sends rows the database has already queued, so calling it can't create or
-// change an alert; the worst a stranger can do is make it send pending rows
-// a little sooner.
+// Deployed with verify_jwt = false (see supabase/config.toml): only the
+// database may call it, with the shared secret header (_shared/cron-auth.ts).
 //
 // Who gets what, and when, is decided in the database (sos_run_dispatch, run at
 // once by raise_sos and every 15 s by pg_cron). This function is only the SMS
@@ -22,6 +20,8 @@
 // so the console shows that no SMS went out.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+
+import { isCronRequest, unauthorized } from '../_shared/cron-auth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -94,7 +94,9 @@ async function sendSms(to: string, body: string): Promise<SendResult> {
 // ---------------------------------------------------------------------------
 
 function withLink(row: OutboxRow): string {
-  return ADMIN_CONSOLE_URL ? `${row.body} Respond: ${ADMIN_CONSOLE_URL}/sos/${row.alert_id}` : row.body;
+  return ADMIN_CONSOLE_URL
+    ? `${row.body} Respond: ${ADMIN_CONSOLE_URL}/sos/${row.alert_id}`
+    : row.body;
 }
 
 async function sendPending(): Promise<{ sent: number; failed: number; skipped: number }> {
@@ -128,6 +130,7 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Use POST' }), { status: 405 });
   }
+  if (!isCronRequest(request)) return unauthorized();
   try {
     const result = await sendPending();
     return new Response(JSON.stringify(result), {

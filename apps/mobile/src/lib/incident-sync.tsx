@@ -1,6 +1,5 @@
 import { INCIDENT_PHOTOS_BUCKET, submitIncidentSchema } from '@deltaguard/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { File } from 'expo-file-system';
 import * as Network from 'expo-network';
 import {
   createContext,
@@ -22,7 +21,9 @@ import {
   updateIncident,
 } from './incident-store';
 import { incidentKeys } from './incidents';
+import { isOfflineState, looksOffline } from './network';
 import { supabase } from './supabase';
+import { readEncryptedBytes } from './vault';
 
 // The incident offline queue.
 //
@@ -64,10 +65,11 @@ export function photoPath(userId: string, incidentId: string, photoId: string): 
   return `${userId}/${incidentId}/${photoId}.jpg`;
 }
 
-async function uploadPhoto(path: string, localUri: string): Promise<Failure | null> {
+async function uploadPhoto(userId: string, path: string, localUri: string): Promise<Failure | null> {
   let bytes: Uint8Array;
   try {
-    bytes = await new File(localUri).bytes();
+    // Decrypted in memory for the upload (lib/vault.ts).
+    bytes = await readEncryptedBytes(localUri, userId);
   } catch {
     return {
       transient: false,
@@ -126,7 +128,7 @@ async function sendOne(
 
   for (const photo of item.photos) {
     if (photo.uploaded) continue;
-    const failure = await uploadPhoto(photoPath(userId, item.id, photo.id), photo.localUri);
+    const failure = await uploadPhoto(userId, photoPath(userId, item.id, photo.id), photo.localUri);
     if (failure) return failure;
     await updateIncident(userId, item.id, (current) =>
       current
@@ -169,11 +171,6 @@ export function useIncidentSync() {
   const value = use(IncidentSyncContext);
   if (!value) throw new Error('useIncidentSync must be used inside <IncidentSyncProvider>');
   return value;
-}
-
-async function looksOffline(): Promise<boolean> {
-  const state = await Network.getNetworkStateAsync().catch(() => null);
-  return state?.isConnected === false || state?.isInternetReachable === false;
 }
 
 export function IncidentSyncProvider({
@@ -281,7 +278,7 @@ export function IncidentSyncProvider({
   useEffect(() => {
     if (!hasQueued) return;
     const network = Network.addNetworkStateListener((state) => {
-      if (state.isConnected && state.isInternetReachable !== false) void run(true);
+      if (!isOfflineState(state)) void run(true);
     });
     const app = AppState.addEventListener('change', (state) => {
       if (state === 'active') void run(true);
